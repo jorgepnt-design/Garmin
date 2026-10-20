@@ -3,9 +3,9 @@
 Vier eigenständige Connect-IQ-Zifferblätter für Jorge: **Sport, Elegant, Tesla und Portugal**.
 Alle vier können nebeneinander installiert werden; jede Variante hat eine eigene App-ID.
 
-**Status: Quellcode erstellt. Noch nicht mit dem Garmin-SDK kompiliert oder auf einer Uhr getestet.**
-Es gibt deshalb derzeit keine geprüften, installierbaren PRG-Dateien. Der GitHub-Check prüft
-Projektstruktur und XML, nicht die Kompilierbarkeit von Monkey C oder das Erscheinungsbild auf der Uhr.
+**Status: Testversion 0.1.0 kompiliert.** Alle vier PRGs wurden mit Garmin Connect IQ SDK 9.3.0 und dem Venu-X1-Geräteprofil (API 6.0.3) erfolgreich und ohne Compilerwarnungen gebaut. Noch kein Simulator- oder Praxistest auf einer echten Uhr. Die native Grafik weicht noch von den Bildentwürfen der Website ab.
+
+Die PRGs und ein Gesamtpaket stehen im [GitHub-Prerelease v0.1.0](https://github.com/jorgepnt-design/Garmin/releases/tag/v0.1.0) bereit. Der private Signierschlüssel und die Garmin-SDK-/Geräteprofildateien sind nicht Teil dieses Repositorys.
 
 ## Die vier Varianten
 

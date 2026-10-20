@@ -19,8 +19,14 @@ class JorgeFace extends WatchUi.WatchFace {
     var secondary = 0xFFFFFF;
     var width = 0;
     var height = 0;
+    var mainFont;
+    var secondsFont;
 
-    function initialize() { WatchFace.initialize(); }
+    function initialize() {
+        WatchFace.initialize();
+        mainFont = WatchUi.loadResource(Rez.Fonts.ClockMain);
+        secondsFont = WatchUi.loadResource(Rez.Fonts.ClockSeconds);
+    }
 
     function onEnterSleep() {
         sleeping = true;
@@ -75,21 +81,23 @@ class JorgeFace extends WatchUi.WatchFace {
     function drawClock(dc, clock, y, showSeconds, dim) {
         var main = clock.hour.format("%02d") + ":" + clock.min.format("%02d");
         var secs = ":" + clock.sec.format("%02d");
-        var font = Graphics.FONT_NUMBER_HOT;
-        var small = Graphics.FONT_SMALL;
+        var font = dim ? Graphics.FONT_NUMBER_MEDIUM : mainFont;
+        var small = secondsFont;
         var extra = 0;
         if (showSeconds) { extra = dc.getTextWidthInPixels(secs, small) + px(8); }
-        var candidates = [Graphics.FONT_NUMBER_HOT, Graphics.FONT_NUMBER_MEDIUM,
-                          Graphics.FONT_LARGE, Graphics.FONT_MEDIUM];
-        for (var i = 0; i < candidates.size(); i += 1) {
-            font = candidates[i];
-            if (dc.getTextWidthInPixels(main, font) + extra <= px(388)) { break; }
-        }
         var mainWidth = dc.getTextWidthInPixels(main, font);
         var start = ((width - mainWidth - extra) / 2).toNumber();
         dc.setColor(dim ? 0x777777 : (theme == 1 ? accent : Graphics.COLOR_WHITE),
                     Graphics.COLOR_BLACK);
-        dc.drawText(start, py(y), font, main, Graphics.TEXT_JUSTIFY_LEFT);
+        if (!dim && theme != 1) {
+            var hours = clock.hour.format("%02d");
+            dc.drawText(start, py(y), font, hours, Graphics.TEXT_JUSTIFY_LEFT);
+            dc.setColor(theme == 3 ? Graphics.COLOR_WHITE : accent, Graphics.COLOR_BLACK);
+            dc.drawText(start + dc.getTextWidthInPixels(hours, font), py(y), font,
+                        ":" + clock.min.format("%02d"), Graphics.TEXT_JUSTIFY_LEFT);
+        } else {
+            dc.drawText(start, py(y), font, main, Graphics.TEXT_JUSTIFY_LEFT);
+        }
         if (showSeconds) {
             dc.setColor(accent, Graphics.COLOR_BLACK);
             var baseline = py(y) + dc.getFontHeight(font) - dc.getFontHeight(small);
@@ -102,11 +110,13 @@ class JorgeFace extends WatchUi.WatchFace {
         // Original vector sedan illustration, not a Tesla logo or photograph.
         dc.setColor(0xFF2438, Graphics.COLOR_BLACK);
         line(dc, 38, 304, 410, 304);
-        dc.setColor(0xD9DEE5, Graphics.COLOR_BLACK);
+        dc.setColor(0x56636B, Graphics.COLOR_BLACK);
         var points = [[65,300],[76,284],[123,277],[162,247],[245,244],
                       [292,263],[347,275],[379,287],[382,308],[347,312],
                       [331,293],[307,293],[291,312],[142,312],[126,293],
                       [102,293],[88,312],[65,308],[65,300]];
+        dc.fillPolygon(points);
+        dc.setColor(0xD9DEE5, Graphics.COLOR_BLACK);
         for (var i = 1; i < points.size(); i += 1) {
             line(dc, points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
         }
@@ -115,8 +125,55 @@ class JorgeFace extends WatchUi.WatchFace {
         line(dc, 239,252, 280,274);
         line(dc, 137,277, 280,274);
         line(dc, 202,254, 202,302);
-        dc.drawCircle(px(114), py(311), px(17));
-        dc.drawCircle(px(319), py(311), px(17));
+        dc.setColor(0x11171C, Graphics.COLOR_BLACK);
+        dc.fillPolygon([[137,277],[174,254],[239,252],[280,274]]);
+        for (var wheel = 0; wheel < 2; wheel += 1) {
+            var x = wheel == 0 ? 114 : 319;
+            dc.setColor(0x080A0C, Graphics.COLOR_BLACK);
+            dc.fillCircle(px(x), py(311), px(21));
+            dc.setColor(0x8A969E, Graphics.COLOR_BLACK);
+            dc.drawCircle(px(x), py(311), px(17));
+            line(dc, x-12,299,x+12,323);
+            line(dc, x-12,323,x+12,299);
+            line(dc, x-17,311,x+17,311);
+            line(dc, x,294,x,328);
+            dc.setColor(0xFF2438, Graphics.COLOR_BLACK);
+            line(dc,x+9,302,x+9,320);
+        }
+    }
+
+    function metricIcon(dc, x, kind) {
+        dc.setColor(theme == 1 ? accent : (kind == 2 && theme == 3 ? secondary : accent), Graphics.COLOR_BLACK);
+        dc.setPenWidth(2);
+        if (kind == 0) {
+            dc.drawCircle(px(x-7), py(345), px(9));
+            line(dc,x-7,330,x-7,334);
+            line(dc,x-21,337,x-18,340);
+            line(dc,x+5,333,x+2,337);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.drawCircle(px(x+2),py(354),px(10));
+            dc.drawRoundedRectangle(px(x-15),py(352),px(35),py(15),px(6));
+        } else if (kind == 1) {
+            dc.fillCircle(px(x+5),py(337),px(5));
+            dc.setPenWidth(4);
+            line(dc,x,347,x-6,359);
+            line(dc,x-6,359,x+5,366);
+            line(dc,x+5,366,x+1,378);
+            line(dc,x-6,359,x-15,372);
+            line(dc,x-15,372,x-22,374);
+            line(dc,x-12,350,x,345);
+            line(dc,x,345,x+10,355);
+            line(dc,x+10,355,x+18,348);
+        } else {
+            dc.drawCircle(px(x),py(352),px(14));
+            line(dc,x,343,x,352);
+            line(dc,x,352,x+7,356);
+            line(dc,x-12,335,x-18,341);
+            line(dc,x+12,335,x+18,341);
+            line(dc,x-9,366,x-12,372);
+            line(dc,x+9,366,x+12,372);
+        }
+        dc.setPenWidth(1);
     }
 
     function drawPortugal(dc) {
@@ -140,8 +197,8 @@ class JorgeFace extends WatchUi.WatchFace {
     }
 
     function metric(dc, x, value, label, color) {
-        text(dc, x, 372, Graphics.FONT_SMALL, value, color, Graphics.TEXT_JUSTIFY_CENTER);
-        text(dc, x, 413, Graphics.FONT_XTINY, label, 0xA0A5AC, Graphics.TEXT_JUSTIFY_CENTER);
+        text(dc, x, 390, Graphics.FONT_SMALL, value, color, Graphics.TEXT_JUSTIFY_CENTER);
+        text(dc, x, 431, Graphics.FONT_XTINY, label, 0xA0A5AC, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function onUpdate(dc) {
@@ -174,13 +231,18 @@ class JorgeFace extends WatchUi.WatchFace {
             line(dc, 35, 105, 413, 105);
             line(dc, 35, 335, 413, 335);
         }
-        drawClock(dc, clock, theme == 3 ? 170 : 142, true, false);
+        drawClock(dc, clock, theme == 3 ? 155 : (theme == 2 ? 100 : 120), true, false);
         if (theme == 2) { drawCar(dc); }
         if (theme == 0) {
             dc.setColor(0x263025, Graphics.COLOR_BLACK);
             for (var n = 0; n < 3; n += 1) {
+                dc.setColor(0x263025, Graphics.COLOR_BLACK);
+                dc.setPenWidth(7);
                 dc.drawCircle(px(82 + n * 142), py(397), px(63));
+                dc.setColor(accent, Graphics.COLOR_BLACK);
+                dc.drawArc(px(82+n*142),py(397),px(63),Graphics.ARC_CLOCKWISE,90, n==1 ? 170 : 210);
             }
+            dc.setPenWidth(1);
             dc.setColor(accent, Graphics.COLOR_BLACK);
             line(dc, 35, 307, 413, 307);
         }
@@ -192,8 +254,12 @@ class JorgeFace extends WatchUi.WatchFace {
         var alarm = Application.Properties.getValue("AlarmTime");
         if (alarm == null || alarm.length() != 5 ||
             alarm.substring(2,3) != ":") { alarm = "--:--"; }
+        metricIcon(dc,82,0);
+        metricIcon(dc,224,1);
+        metricIcon(dc,366,2);
         metric(dc, 82, temperature + "°C", weatherOld ? "WETTER ALT" : "WETTER", accent);
         metric(dc, 224, distance + " km", "HEUTE", theme == 1 ? accent : Graphics.COLOR_WHITE);
         metric(dc, 366, alarm, "MANUELL*", theme == 3 ? secondary : accent);
     }
 }
+

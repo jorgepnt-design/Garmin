@@ -1,0 +1,1 @@
+Alle vier PRGs mit Garmin Connect IQ SDK 9.3.0 für venux1 erfolgreich ohne Warnungen kompiliert. Noch kein Simulator- oder Praxistest. Native Grafik nicht identisch mit der Foto-Designvorschau. Privater Signierschlüssel bleibt lokal und wurde nicht in die entfernte Build-Umgebung übertragen.
