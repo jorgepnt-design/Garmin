@@ -25,6 +25,9 @@ test('four previews, selection and persisted choice',async()=>{
 test('sample seconds and reduced always-on mode',async()=>{
  const dom=await open();try{
  const d=dom.window.document;
+ assert.match(d.getElementById('preview-sport').textContent,/:42/);
+ d.getElementById('live-toggle').click();
+ assert.equal(d.getElementById('live-toggle').getAttribute('aria-pressed'),'true');
  d.getElementById('live-toggle').click();
  assert.match(d.getElementById('preview-sport').textContent,/:42/);
  d.getElementById('aod-toggle').click();
@@ -78,5 +81,14 @@ test('API failure stays safe and explains retry',async()=>{
  assert.match(d.getElementById('release-status').textContent,/nicht geladen/);
  assert.equal(d.getElementById('retry').disabled,false);
  assert.equal(d.getElementById('download').hasAttribute('href'),false);
+ }finally{dom.window.close();}
+});
+
+test('original artwork is the default for all four watch previews',async()=>{
+ const dom=await open();try{
+ const d=dom.window.document;
+ assert.equal(d.getElementById('live-toggle').getAttribute('aria-pressed'),'false');
+ assert.equal(d.querySelectorAll('.watch-case svg image').length,4);
+ for(const image of d.querySelectorAll('.watch-case svg image')) assert.equal(image.getAttribute('href'),'./assets/original-designs.jpg');
  }finally{dom.window.close();}
 });
