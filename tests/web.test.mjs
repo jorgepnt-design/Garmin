@@ -5,7 +5,7 @@ import {JSDOM} from 'jsdom';
 const html=readFileSync(new URL('../docs/index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../docs/app.js',import.meta.url),'utf8');
 async function open(releases=[],ok=true) {
- const dom=new JSDOM(html,{url:'https://example.com/Garmin/',runScripts:'outside-only'});
+ const dom=new JSDOM(html,{url:'https://example.com/Garmin/',runScripts:'outside-only',pretendToBeVisual:true});
  dom.window.fetch=async()=>({ok,status:ok?200:403,json:async()=>releases});
  dom.window.eval(script);
  await new Promise(r=>setTimeout(r,20));
