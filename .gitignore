@@ -1,0 +1,9 @@
+build/
+*.der
+*.pem
+*.prg
+*.iq
+*.debug.xml
+*.mir
+__pycache__/
+.env

@@ -1,0 +1,3 @@
+project.manifest = manifest.xml
+base.sourcePath = ../../shared/source
+base.resourcePath = ../../shared/resources;resources

@@ -1,0 +1,6 @@
+<resources>
+  <properties>
+    <property id="Theme" type="number">0</property>
+    <property id="AlarmTime" type="string">--:--</property>
+  </properties>
+</resources>
