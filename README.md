@@ -102,3 +102,13 @@ Beim Sideloading die manuelle Weckzeit vor dem Build mit `--alarm` festlegen.
 - [Geräteeinstellungen und alarmCount](https://developer.garmin.com/connect-iq/api-docs/Toybox/System/DeviceSettings.html)
 
 Keine Zugangsdaten, privaten Schlüssel oder personenbezogenen Gesundheitsdaten gehören ins Repository.
+
+## Watch Studio Web-App
+
+Die statische Web-App liegt in `docs/`: vier interaktive Zifferblattvorschauen mit Sekunden, Designauswahl, Ruhemodus und Installationsanleitungen für Windows, Mac und iPhone.
+
+Die Seite prüft GitHub-Releases auf passende, nicht leere `Jorge-<variante>.prg`-Assets. Ohne Release-Datei bleibt der Download gesperrt. Ein Release bestätigt keinen Uhrentest. Die Web-App überträgt selbst keine Dateien auf die Uhr.
+
+GitHub Pages: Quelle `main` und Ordner `/docs`. Alternativ kann das Repository mit Vercel verbunden werden; `vercel.json` setzt `docs` als Ausgabeordner.
+
+Web-Tests: `npm install`, danach `npm test`. Geprüft werden Designauswahl, Sekunden/Ruhemodus, Tastaturbedienung der Anleitungen, fehlende Builds, korrekte und ungültige Release-Dateien sowie API-Fehler.
