@@ -1,0 +1,11 @@
+Direct editor PRG conversion – 2026-10-23
+Source service: jorgepnt-design/garmindesigner (existing GitHub Actions build and neueste release).
+Editor integrates the current draft directly; JSON download/re-upload is no longer required.
+Pixel exports are routed through tools/editor_adapter.py and tools/editor_build.py, preserving the editor's native-ready glyph/image assets.
+Backend integration run 39867567206: completed successfully.
+Produced release asset: editor-integrationstest-venux1.prg (378572 bytes).
+Local native compilation succeeded; fourteen web tests passed, including exact-commit build tracking, wrong-release rejection, UTF-8 payload encoding and saved-draft persistence.
+Published UI and missing-token guidance verified in the browser.
+Existing gd_token storage is reused on the same origin; entered tokens are sent only to api.github.com.
+Build upload writes the draft and embedded images to the public garmindesigner repository, as disclosed above the conversion button.
+A successful build is not a physical-watch runtime test.
