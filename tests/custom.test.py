@@ -21,3 +21,24 @@ for value in [-1,float('nan'),500]:
  else:raise AssertionError('Invalid coordinate accepted')
 Path('/tmp/editor-image-test.json').write_text(json.dumps(config))
 print('Seven presets, embedded PNG transparency, native layer order and invalid coordinates verified.')
+# Native-ready exports must keep the supplied pixel data and integer advances.
+from build_custom import font_resource,static_image
+import re
+portable=json.loads(json.dumps(config));portable['renderVersion']=1;portable['renderAssets']={}
+with tempfile.TemporaryDirectory() as t:
+ folder=Path(t)
+ for i,e in enumerate(portable['elements']):
+  if not e.get('visible',True):continue
+  if e['type'] in {'image','icon','text'}:
+   im=static_image(e);b=io.BytesIO();im.save(b,format='PNG');asset={'kind':'bitmap','x':e['x'],'y':e['y']}
+  else:
+   font_resource(folder,'Test',e['font'],e['size'],'0123456789:.-% °CkmAKTIVUS');im=Image.open(folder/'Test.png').convert('L');coverage=Image.new('RGBA',im.size,'white');coverage.putalpha(im);b=io.BytesIO();coverage.save(b,format='PNG');glyphs={}
+   for line in (folder/'Test.fnt').read_text().splitlines():
+    if line.startswith('char id='):
+     g={k:int(v) for k,v in re.findall(r'(id|x|width)=(-?\d+)',line)};glyphs[chr(g['id'])]={'x':g['x'],'w':g['width']}
+   asset={'kind':'font','height':im.height,'width':im.width,'glyphs':glyphs}
+  asset['data']='data:image/png;base64,'+base64.b64encode(b.getvalue()).decode();portable['renderAssets'][str(i)]=asset
+ out=generate(portable,folder/'exact');code=(out/'source/Custom.mc').read_text();assert 'drawPixels(dc,pixels[' in code;assert 'fonts["Font' not in code;assert (out/'resources/Exact0.png').read_bytes()
+ glyph=Image.open(next((out/'resources').glob('Glyph*.png')));assert glyph.mode=='RGBA'
+Path('/tmp/editor-pixel-test.json').write_text(json.dumps(portable))
+print('Portable pixel assets bypass font-engine rendering and preserve supplied glyph advances.')
