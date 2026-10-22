@@ -20,7 +20,7 @@
   else{ctx.arc(x,352,14,0,Math.PI*2);ctx.stroke();[[0,343,0,352],[0,352,7,356],[-12,335,-18,341],[12,335,18,341],[-9,366,-12,372],[9,366,12,372]].forEach(v=>line(x+v[0],v[1],x+v[2],v[3],c));}
  }
  function draw(){if(!ready)return;const theme=$('studio-theme').value,a=color[theme],gold=theme==='elegant',pt=theme==='portugal';ctx.fillStyle='#000';ctx.fillRect(0,0,448,486);
- $('studio-download').href='./builds/0.2.1/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.1 herunterladen';
+ $('studio-download').href='./builds/0.2.2/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.2 herunterladen';
  const n=$('studio-live').checked?new Date():new Date('2026-10-22T'+($('studio-time').value||'20:35')+':42');
  const pad=x=>String(x).padStart(2,'0'),h=pad(n.getHours()),m=pad(n.getMinutes()),s=pad(n.getSeconds());
  if($('studio-aod').checked){text('value',h+':'+m,224,210,'#777','center');return;}
@@ -47,6 +47,6 @@
  ['pointerup','pointercancel','pointerleave'].forEach(e=>canvas.addEventListener(e,()=>clearTimeout(holdTimer)));
  document.querySelectorAll('#studio input,#studio select').forEach(e=>e.addEventListener('input',draw));
  document.querySelectorAll('[data-studio-action]').forEach(e=>e.addEventListener('click',()=>activate(Number(e.dataset.studioAction),390)));
- try{meta=await(await fetch('./assets/fonts/atlas.json?v=021')).json();await Promise.all(Object.keys(meta).map(async name=>{images[name]=await load('./assets/fonts/'+name+'.png?v=021');}));car=await load('./assets/car.png');ready=true;draw();setInterval(draw,1000);$('studio-load').textContent='448 × 486 Pixel · gleiche Schriftatlanten wie im neuen Uhrencode';}
+ try{meta=await(await fetch('./assets/fonts/atlas.json?v=022')).json();await Promise.all(Object.keys(meta).map(async name=>{images[name]=await load('./assets/fonts/'+name+'.png?v=022');}));car=await load('./assets/car.png');ready=true;draw();setInterval(draw,1000);$('studio-load').textContent='448 × 486 Pixel · gleiche Zeichenformen und Pixelmaße wie im Uhrencode';}
  catch(e){$('studio-load').textContent='Vorschau konnte nicht geladen werden. Bitte Seite neu laden.';}
 })();

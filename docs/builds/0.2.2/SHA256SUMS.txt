@@ -1,0 +1,4 @@
+b6e718971b52cc02e87a055fc60d62c66945c07969f76236b450b6006663ce1b  Jorge-elegant.prg
+db530ba1d74b3ae7491e59aaa1be876fd3a6e8f4007f008a2e28fd297e3efa11  Jorge-portugal.prg
+6711a1113aa629b93a1cb3f3c5be5bea2c86cb53a0c4d35abf64965a9eff822b  Jorge-sport.prg
+36f27c36022c4e70378162e9d0cc0fdddcddad82c8e415fd33826201f0df9ffb  Jorge-tesla.prg

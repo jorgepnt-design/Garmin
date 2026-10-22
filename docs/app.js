@@ -75,7 +75,7 @@ function updateDetails() {
     link.tabIndex=0;
     link.textContent=d.name+" · PRG herunterladen ↓";
     el("release-status").textContent="Build verfügbar · "+asset.tag+(asset.pre?" · Vorabversion":"");
-    el("release-note").textContent="Version 0.2.1: kräftige, größere Schriften, deutlich größere Akkuanzeige, klare Linien und Garmin-Alarmanzahl. Kompiliert, aber noch nicht im Garmin-Simulator oder auf deiner Uhr bestätigt. Erst ein Design testen.";
+    el("release-note").textContent="Version 0.2.2: Elegant mit schlanken Serifenziffern, korrigierter Kantenglättung und großer Akkuanzeige. Kompiliert, aber noch nicht im Garmin-Simulator oder auf deiner Uhr bestätigt. Erst ein Design testen.";
  } else {
     const messages={loading:"Downloadstatus wird geprüft …",empty:"Noch kein installierbarer Build veröffentlicht.",error:"Status konnte nicht geladen werden. Bitte erneut prüfen.",ready:"Für dieses Design ist noch kein Build verfügbar."};
     el("release-status").textContent=messages[releaseState]+(checkedAt?" · "+checkedAt:"");
@@ -97,7 +97,7 @@ function validAsset(a,slug) {
 }
 async function checkReleases() {
  if (window.JORGE_CURRENT_BUILD) {
-  releaseAssets=new Map(designs.map(d=>[d.id,{url:"./builds/0.2.1/Jorge-"+d.id+".prg",tag:"0.2.1",pre:true}]));
+  releaseAssets=new Map(designs.map(d=>[d.id,{url:"./builds/0.2.2/Jorge-"+d.id+".prg",tag:"0.2.2",pre:true}]));
   releaseState="ready";el("retry").disabled=false;updateDetails();return;
  }
  releaseState="loading";checkedAt="";el("retry").disabled=true;updateDetails();

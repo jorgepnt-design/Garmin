@@ -1,0 +1,8 @@
+Jorge Venu X1 – Testversion 0.2.2
+Elegant: schlanke Serifenziffern statt der falschen fetten Sans-Schrift.
+Schriftexport korrigiert: Graustufen-Kantenglättung in RGB, keine ausschließlich transparente Glättung. Zeichenabstände erhalten; keine vertikale Verzerrung.
+Große Akkuanzeige und gut lesbare Datenwerte bleiben erhalten.
+Alle vier PRGs mit SDK 9.3.0 für venux1 kompiliert. Layout und RGB-Schriftmasken geprüft. Noch kein Simulator- oder Uhrentest dieser Version.
+Die PRG deiner Variante nach GARMIN/APPS kopieren und die ältere Datei derselben Variante ersetzen. Sicher trennen und das Zifferblatt erneut auswählen.
+Alarmfeld: Garmin-Alarmanzahl. Die öffentliche Schnittstelle liefert keine nächste Weckzeit.
+Vorschau: https://jorgepnt-design.github.io/Garmin/#studio

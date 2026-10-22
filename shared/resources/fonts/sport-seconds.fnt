@@ -1,5 +1,5 @@
 info face="Jorge sport-seconds" size=56 bold=0 italic=0 unicode=1 smooth=1 aa=1
-common lineHeight=56 base=56 scaleW=260 scaleH=56 pages=1 packed=0
+common lineHeight=56 base=56 scaleW=260 scaleH=56 pages=1 packed=0 alphaChnl=4 redChnl=0 greenChnl=0 blueChnl=0
 page id=0 file="sport-seconds.png"
 chars count=11
 char id=48 x=0 y=0 width=25 height=56 xoffset=0 yoffset=0 xadvance=25 page=0 chnl=15

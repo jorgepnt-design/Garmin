@@ -20,3 +20,16 @@ assert f['battery']['height']>=36
 assert f['value']['height']>=32 and f['label']['height']>=18
 assert 389+f['value']['height']<431 and 431+f['label']['height']<=457
 print('All clock times, header, battery, metric extremes and vertical text gaps fit.')
+
+# Native font smoothing must be present in RGB, not only transparency.
+from PIL import Image, ImageChops
+for name in f:
+    native=Image.open(ROOT/'shared/resources/fonts'/f'{name}.png')
+    web=Image.open(ROOT/'docs/assets/fonts'/f'{name}.png')
+    assert native.mode=='RGB',name
+    r,g,b=native.split()
+    assert ImageChops.difference(r,g).getbbox() is None
+    assert ImageChops.difference(r,b).getbbox() is None
+    assert ImageChops.difference(r,web.getchannel('A')).getbbox() is None
+    assert any(0<v<255 for v in r.getdata()),name
+print('Native RGB smoothing matches browser glyph coverage for every font.')
