@@ -1,0 +1,8 @@
+Editor verification – 2026-10-23
+- Saved Tesla draft: hour size 116 px and X=32 survived reload and reopening the template URL.
+- Landing page displayed the saved canvas preview and linked to the custom design builder.
+- Browser-exported PNG compared with composition of exported native bitmap/glyph assets: max channel difference 0; differing pixels 0 (448 x 486, fixed example values).
+- Exported design with embedded white Tesla image compiled successfully using Garmin SDK 9.3.0 and the official venux1 profile.
+- Eleven web regression tests passed; seven template generator checks, embedded PNG transparency, supplied glyph advances and native pixel-asset checks passed.
+- This verifies the editor/export/build pipeline. No successful simulator runtime or physical-watch test of this change has been performed.
+- Save a fresh design JSON in the updated editor and rebuild with the updated tools/build_custom.py. Older standard PRGs do not contain editor changes.
