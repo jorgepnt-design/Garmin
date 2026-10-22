@@ -68,7 +68,7 @@
  $('keep').onclick=()=>savePreview().catch(e=>message('Speichern fehlgeschlagen: '+e.message));
  $('save-as').onclick=async()=>{remember();activeId='custom-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);state=clone(state);state.editorId=activeId;state.name=state.name+' Kopie';const u=new URL(location.href);u.searchParams.set('design',activeId);historyAPI(u);refresh();try{await savePreview();message('Neues Design gespeichert. Den Namen kannst du im Feld Designname ändern.');}catch(e){message(e.message);}};
  async function portable(){
- const d=clone(state);d.renderVersion=1;d.renderAssets={};
+ const d=clone(state);d.buildId=crypto.randomUUID().replace(/-/g,'').slice(0,8).toUpperCase();d.renderVersion=1;d.renderAssets={};
  for(let i=0;i<d.elements.length;i++){
   const e=d.elements[i];if(!e.visible)continue;
   if(['image','icon','text'].includes(e.type)){
@@ -95,7 +95,7 @@
   const status=t=>$('convert-status').textContent=t;
   if(!token){status('Bitte unter „GitHub-Zugang einrichten“ deinen Schlüssel für garmindesigner eintragen.');return;}
   $('convert-now').disabled=true;$('convert-cancel').hidden=false;$('convert-download').hidden=true;conversionController=new AbortController();
-  try{status('Der aktuelle Entwurf wird vorbereitet …');const design=await portable();await savePreview();const result=await JorgeConverter.convert(design,token,$('convert-name').value,status,{signal:conversionController.signal});const a=$('convert-download');a.href=result.url;a.textContent=result.name+' herunterladen';a.hidden=false;status('Fertig. Genau dieser gespeicherte Entwurf wurde für die Venu X1 kompiliert.');}
+  try{status('Der aktuelle Entwurf wird vorbereitet …');const design=await portable();await savePreview();const result=await JorgeConverter.convert(design,token,$('convert-name').value,status,{signal:conversionController.signal});const a=$('convert-download');a.href=result.url;a.textContent=result.name+' herunterladen · E-'+design.buildId;a.hidden=false;status('Fertig. Auf der Uhr dieses Zifferblatt wählen: '+(design.name||'Jorge Custom').slice(0,18)+' E-'+design.buildId+'. Nur dieser Bau enthält den gerade umgewandelten Entwurf.');}
   catch(e){status(e.name==='AbortError'?'Warten beendet. Ein bereits gestarteter GitHub-Bau läuft dort weiter.':e.message);}
   finally{$('convert-now').disabled=false;$('convert-cancel').hidden=true;conversionController=null;}
  };
