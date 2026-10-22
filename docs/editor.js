@@ -72,6 +72,20 @@
  draw();return d;
  }
  $('json').onclick=async()=>{try{save();const d=await portable();savePreview();download(JSON.stringify(d,null,2),'mein-design.json','application/json');message('Gespeichert: Layout und identische Schrift-/Bildpixel für den PRG-Bau.');}catch(e){draw();message('Speichern fehlgeschlagen: '+e.message);}};$('png').onclick=()=>{clean=true;draw();canvas.toBlob(b=>{download(b,'mein-design.png','image/png');clean=false;draw();});};
+ let conversionController=null;
+ function tokenState(){let has=false;try{has=!!localStorage.getItem('gd_token');}catch{}$('convert-token-state').textContent=has?'GitHub-Schlüssel aus Garmin Designer ist in diesem Browser gespeichert.':'Noch kein GitHub-Schlüssel gespeichert.';}
+ tokenState();
+ $('convert-save-token').onclick=()=>{const token=$('convert-token').value.trim();if(!token){message('Bitte einen GitHub-Schlüssel eintragen.');return;}try{localStorage.setItem('gd_token',token);$('convert-token').value='';tokenState();}catch{message('Der Schlüssel konnte nicht gespeichert werden. Du kannst ihn zum einmaligen Umwandeln im Feld belassen.');}};
+ $('convert-cancel').onclick=()=>conversionController?.abort();
+ $('convert-now').onclick=async()=>{
+  let token=$('convert-token').value.trim();try{token=token||localStorage.getItem('gd_token')||'';}catch{}
+  const status=t=>$('convert-status').textContent=t;
+  if(!token){status('Bitte unter „GitHub-Zugang einrichten“ deinen Schlüssel für garmindesigner eintragen.');return;}
+  $('convert-now').disabled=true;$('convert-cancel').hidden=false;$('convert-download').hidden=true;conversionController=new AbortController();
+  try{status('Der aktuelle Entwurf wird vorbereitet …');const design=await portable();savePreview();const result=await JorgeConverter.convert(design,token,$('convert-name').value,status,{signal:conversionController.signal});const a=$('convert-download');a.href=result.url;a.textContent=result.name+' herunterladen';a.hidden=false;status('Fertig. Genau dieser gespeicherte Entwurf wurde für die Venu X1 kompiliert.');}
+  catch(e){status(e.name==='AbortError'?'Warten beendet. Ein bereits gestarteter GitHub-Bau läuft dort weiter.':e.message);}
+  finally{$('convert-now').disabled=false;$('convert-cancel').hidden=true;conversionController=null;}
+ };
  $('import').onchange=async()=>{try{const f=$('import').files[0];if(!f)return;if(f.size>8000000)throw Error('Datei ist zu groß (max. 8 MB).');const v=validate(JSON.parse(await f.text()));change(()=>{state=v;selected=0;});message('Design einschließlich Bilder geladen.');}catch(e){message(e.message);}$('import').value='';};
  $('image-upload').onchange=async()=>{try{const f=$('image-upload').files[0];if(!f)return;if(state.elements.length>=40)throw Error('Höchstens 40 Elemente.');if(f.size>20000000)throw Error('Bild zu groß (max. 20 MB).');const url=URL.createObjectURL(f),im=new Image();try{await new Promise((r,j)=>{im.onload=r;im.onerror=()=>j(Error('Bild konnte nicht geöffnet werden. PNG, JPG oder WebP verwenden.'));im.src=url;});const factor=Math.min(1,448/im.width,486/im.height),c=document.createElement('canvas');c.width=Math.max(8,Math.round(im.width*factor));c.height=Math.max(8,Math.round(im.height*factor));c.getContext('2d').drawImage(im,0,0,c.width,c.height);const data=c.toDataURL('image/png');if(data.length>1500000)throw Error('Bild enthält zu viele Daten. Bitte ein kleineres Bild wählen.');if(JSON.stringify(state).length+data.length>7000000)throw Error('Design ist voll. Bitte ein anderes Bild entfernen und erneut versuchen.');change(()=>{state.elements.push({...element('image',0,0,30),width:c.width,height:c.height,data});selected=state.elements.length-1;});message('Bild hinzugefügt. Bei Bedarf „In den Hintergrund“ wählen.');}finally{URL.revokeObjectURL(url);}}catch(e){message(e.message);}$('image-upload').value='';};
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));$('edit').hidden=b.dataset.tab!=='edit';$('export').hidden=b.dataset.tab!=='export';});$('live').onchange=draw;
