@@ -31,6 +31,7 @@
  function slotId(name){return Object.keys(slots).find(k=>slots[k]===name)||({Ocean:'ocean',Solar:'solar',Minimal:'minimal'}[name])||'custom-'+Date.now().toString(36);}
  async function updateSavedList(){const rows=await designStore.list();$('saved-designs').replaceChildren(...[new Option('Gespeicherten Entwurf wählen …',''),...rows.map(r=>new Option(r.name,r.id))]);$('saved-designs').value=activeId;}
  function save(){
+  if(lastBuiltState&&lastBuiltState!==JSON.stringify(state)){$('convert-download').hidden=true;const link=document.getElementById('convert-preview');if(link)link.hidden=true;$('convert-status').textContent='Entwurf geändert. Bitte erneut umwandeln, damit die PRG diesen Änderungen entspricht.';lastBuiltState=null;}
   activeId=activeId||state.editorId||slotId(state.name);state.editorId=activeId;const id=activeId,snapshot=designStore.clean(state),version=++saveVersion;
   $('save-state').textContent='Wird gespeichert …';
   saveQueue=saveQueue.catch(()=>{}).then(()=>designStore.put(id,snapshot)).then(()=>{if(version===saveVersion)$('save-state').textContent='Design gespeichert · in diesem Browser';return updateSavedList();}).catch(e=>{if(version===saveVersion)$('save-state').textContent='Speichern fehlgeschlagen – Designdatei sichern';throw e;});saveQueue.catch(()=>{});
@@ -67,6 +68,7 @@
  }
  $('keep').onclick=()=>savePreview().catch(e=>message('Speichern fehlgeschlagen: '+e.message));
  $('save-as').onclick=async()=>{remember();activeId='custom-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);state=clone(state);state.editorId=activeId;state.name=state.name+' Kopie';const u=new URL(location.href);u.searchParams.set('design',activeId);historyAPI(u);refresh();try{await savePreview();message('Neues Design gespeichert. Den Namen kannst du im Feld Designname ändern.');}catch(e){message(e.message);}};
+ let lastBuiltState=null;
  async function portable(){
  const d=clone(state);d.buildId=crypto.randomUUID().replace(/-/g,'').slice(0,8).toUpperCase();d.renderVersion=1;d.renderAssets={};
  for(let i=0;i<d.elements.length;i++){
@@ -94,8 +96,8 @@
   let token=$('convert-token').value.trim();try{token=token||localStorage.getItem('gd_token')||'';}catch{}
   const status=t=>$('convert-status').textContent=t;
   if(!token){status('Bitte unter „GitHub-Zugang einrichten“ deinen Schlüssel für garmindesigner eintragen.');return;}
-  $('convert-now').disabled=true;$('convert-cancel').hidden=false;$('convert-download').hidden=true;conversionController=new AbortController();
-  try{status('Der aktuelle Entwurf wird vorbereitet …');const design=await portable();await savePreview();const result=await JorgeConverter.convert(design,token,$('convert-name').value,status,{signal:conversionController.signal});const a=$('convert-download');a.href=result.url;a.textContent=result.name+' herunterladen · P2-'+design.buildId;a.hidden=false;let previewLink=document.getElementById('convert-preview');if(!previewLink){previewLink=document.createElement('a');previewLink.id='convert-preview';previewLink.target='_blank';previewLink.rel='noopener';a.after(previewLink);}previewLink.href=result.previewUrl;previewLink.textContent='Vorschau dieser PRG · P2-'+design.buildId;status('Fertig. Auf der Uhr dieses Zifferblatt wählen: '+result.appName+'. Nur dieser Bau enthält den gerade umgewandelten Entwurf.');}
+  $('convert-now').disabled=true;$('convert-cancel').hidden=false;$('convert-download').hidden=true;const previousPreview=document.getElementById('convert-preview');if(previousPreview)previousPreview.hidden=true;conversionController=new AbortController();
+  try{status('Der aktuelle Entwurf wird vorbereitet …');const builtState=JSON.stringify(state);const design=await portable();await savePreview();const result=await JorgeConverter.convert(design,token,$('convert-name').value,status,{signal:conversionController.signal});if(builtState!==JSON.stringify(state))throw Error('Der Entwurf wurde während des Baus verändert. Bitte erneut umwandeln.');lastBuiltState=builtState;const a=$('convert-download');a.href=result.url;a.textContent=result.name+' herunterladen · P2-'+design.buildId;a.hidden=false;let previewLink=document.getElementById('convert-preview');if(!previewLink){previewLink=document.createElement('a');previewLink.id='convert-preview';previewLink.target='_blank';previewLink.rel='noopener';a.after(previewLink);}previewLink.hidden=false;previewLink.href=result.previewUrl;previewLink.textContent='Vorschau dieser PRG · P2-'+design.buildId;status('Fertig. Auf der Uhr dieses Zifferblatt wählen: '+result.appName+'. Nur dieser Bau enthält den gerade umgewandelten Entwurf.');}
   catch(e){status(e.name==='AbortError'?'Warten beendet. Ein bereits gestarteter GitHub-Bau läuft dort weiter.':e.message);}
   finally{$('convert-now').disabled=false;$('convert-cancel').hidden=true;conversionController=null;}
  };
