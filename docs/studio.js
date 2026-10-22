@@ -20,7 +20,7 @@
   else{ctx.arc(x,352,14,0,Math.PI*2);ctx.stroke();[[0,343,0,352],[0,352,7,356],[-12,335,-18,341],[12,335,18,341],[-9,366,-12,372],[9,366,12,372]].forEach(v=>line(x+v[0],v[1],x+v[2],v[3],c));}
  }
  function draw(){if(!ready)return;const theme=$('studio-theme').value,a=color[theme],gold=theme==='elegant',pt=theme==='portugal';ctx.fillStyle='#000';ctx.fillRect(0,0,448,486);
- $('studio-download').href='./builds/0.2.2/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.2 herunterladen';
+ $('studio-download').href='./builds/0.2.3/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.3 herunterladen';
  const n=$('studio-live').checked?new Date():new Date('2026-10-22T'+($('studio-time').value||'20:35')+':42');
  const pad=x=>String(x).padStart(2,'0'),h=pad(n.getHours()),m=pad(n.getMinutes()),s=pad(n.getSeconds());
  if($('studio-aod').checked){text('value',h+':'+m,224,210,'#777','center');return;}
@@ -34,8 +34,8 @@
  else {line(153,365,153,450,gold?a:'#343940');line(295,365,295,450,gold?a:'#343940');}
  const km=Number($('studio-distance').value),dist=km.toFixed(km<100?2:km<1000?1:0),temp=$('studio-missing').checked?'--':$('studio-temp').value;
  [82,224,366].forEach((x,i)=>icon(x,i,pt&&i===2?'#ef3340':a));
- [temp+'°C',dist,$('studio-alarm-count').value||'0'].forEach((v,i)=>{if(width('value',v)>120)v='--';text('value',v,82+i*142,389,i===1&&!gold?'#fff':pt&&i===2?'#ef3340':a,'center');});
- ['WETTER','KM HEUTE','ALARME'].forEach((v,i)=>text('label',v,82+i*142,431,'#d9dde1','center'));
+ [temp+'°C',dist,String(Number($('studio-alarm-count').value))].forEach((v,i)=>{if(width('value',v)>120)v='--';text('value',v,82+i*142,389,i===1&&!gold?'#fff':pt&&i===2?'#ef3340':a,'center');});
+ ['WETTER','KM HEUTE',Number($('studio-alarm-count').value)>0?'AKTIV':'AUS'].forEach((v,i)=>text('label',v,82+i*142,431,'#d9dde1','center'));
  if($('studio-zones').checked){ctx.fillStyle='#ffffff15';ctx.strokeStyle='#ffffff80';[[22,325,131,135],[153,325,142,135],[320,35,106,90]].forEach(r=>{ctx.fillRect(...r);ctx.strokeRect(...r);});}
  }
  function activate(x,y){if($('studio-aod').checked)return;let msg='Hier ist kein bedienbares Datenfeld.';

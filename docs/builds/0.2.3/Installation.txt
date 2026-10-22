@@ -1,0 +1,4 @@
+Jorge Venu X1 – 0.2.3
+Alarmfeld: Anzahl der von Garmin gemeldeten aktiven Alarme, darunter AKTIV bei mindestens einem Alarm, sonst AUS. Keine Anzeige der nächsten Weckzeit.
+Alle vier Varianten erfolgreich für venux1 kompiliert. Noch kein Test dieser Version auf der Uhr.
+PRG deiner Variante nach GARMIN/APPS kopieren, die ältere Datei derselben Variante ersetzen, sicher trennen und Zifferblatt erneut auswählen.

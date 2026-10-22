@@ -244,13 +244,15 @@ class JorgeFace extends WatchUi.WatchFace {
             line(dc, 153, 365, 153, 450);
             line(dc, 295, 365, 295, 450);
         }
-        var alarm = System.getDeviceSettings().alarmCount.toString();
+        var alarmCount = System.getDeviceSettings().alarmCount;
+        var alarm = alarmCount.toString();
+        var alarmStatus = (alarmCount > 0) ? "AKTIV" : "AUS";
         metricIcon(dc,82,0);
         metricIcon(dc,224,1);
         metricIcon(dc,366,2);
         metric(dc, 82, temperature + "°C", weatherOld ? "WETTER ALT" : "WETTER", accent);
         metric(dc, 224, distance, "KM HEUTE", theme == 1 ? accent : Graphics.COLOR_WHITE);
-        metric(dc, 366, alarm, "ALARME", theme == 3 ? secondary : accent);
+        metric(dc, 366, alarm, alarmStatus, theme == 3 ? secondary : accent);
     }
 }
 

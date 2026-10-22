@@ -15,7 +15,7 @@ for t in (-50,-20,-1,0,9,16,60): assert width('value',f'{t}°C')<=120
 for km in (0,.01,.91,8.42,99.99,100,999.9,1000,9999):
     value=f'{km:.2f}' if km<100 else f'{km:.1f}' if km<1000 else f'{km:.0f}'
     assert width('value',value)<=120,(km,value)
-for text in ('WETTER','KM HEUTE','ALARME'): assert width('label',text)<=120
+for text in ('WETTER','KM HEUTE','ALARM'): assert width('label',text)<=120
 assert f['battery']['height']>=36
 assert f['value']['height']>=32 and f['label']['height']>=18
 assert 389+f['value']['height']<431 and 431+f['label']['height']<=457
@@ -33,3 +33,7 @@ for name in f:
     assert ImageChops.difference(r,web.getchannel('A')).getbbox() is None
     assert any(0<v<255 for v in r.getdata()),name
 print('Native RGB smoothing matches browser glyph coverage for every font.')
+
+for text in ('AN','AUS'): assert width('value',text)<=120
+
+for text in ('AKTIV','AUS'): assert width('label',text)<=120

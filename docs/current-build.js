@@ -1,1 +1,1 @@
-window.JORGE_CURRENT_BUILD = "0.2.2";
+window.JORGE_CURRENT_BUILD = "0.2.3";
