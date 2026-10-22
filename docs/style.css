@@ -9,36 +9,5 @@
 .hardware-label{text-align:center;font-size:8px;letter-spacing:.13em;color:#737d66;margin:0 0 20px}
 @media(max-width:620px){.watch-shell{padding:0;margin:10px auto 12px}.watch-case{padding:0;border-radius:9.6% / 8.85%}.hardware-label{font-size:7px;letter-spacing:.05em;margin-bottom:14px}.watch-case svg{border-radius:0}.design-card{padding-top:16px}}
 
-/* Original artwork supplied by Jorge: photographic watch previews, exact design details. */
-:root{color-scheme:dark}
-body{background:#1b1c1e;color:#f2f1eb;background-image:radial-gradient(ellipse at 50% 12%,#34353666,transparent 65%)}
-.nav{border-color:#ffffff1a}.brand-icon{background:#d3d6ca;color:#1b1c1e}.nav nav a,.brand{color:#eee}.edition{color:#aaa}
-h1 span{color:#b2b3ad}p{color:#b7b8b3}.eyebrow{color:#bfc2b8}.dot{background:#a8ff24}
-.intro-foot{border-color:#ffffff20;color:#b4b6ae}
-.preview-controls{background:#30332d}.preview-controls button{color:#b9c1ad}.preview-controls button[aria-pressed=true]{background:#a8ff24;color:#17210c}
-.design-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 50px;max-width:1030px;margin:30px auto}
-.design-card,.design-card.selected{background:transparent;border:1px solid transparent;padding:15px 12px 22px;border-radius:15px}
-.design-card.selected{border-color:#7b925b66;box-shadow:0 0 35px #a8ff2406}
-.card-top{display:none}
-.watch-shell{width:100%;max-width:440px;aspect-ratio:440/510;margin:0 auto;padding:0;filter:none}
-.watch-shell:before,.watch-shell:after,.watch-case:after{display:none}
-.watch-case{position:static;inset:auto;width:100%;height:100%;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
-.watch-case svg{width:100%;height:100%;border-radius:0;aspect-ratio:440/510}
-.hardware-label{display:none}
-.design-card h3{text-align:center;text-transform:uppercase;font-size:20px;letter-spacing:.27em;font-weight:500;margin:14px 0}
-.design-card[data-design=sport] h3{color:#b0ff22}.design-card[data-design=elegant] h3{color:#e8cd91}.design-card[data-design=tesla] h3{color:#ff233b}.design-card[data-design=portugal] h3{color:#74d936}
-.design-card p{font-size:12px;text-align:center;min-height:0;max-width:350px;margin:0 auto 18px;color:#aeb0aa}
-.select-design{max-width:320px;margin:auto;background:#ffffff05;border-color:#ffffff26;color:#d4d9cc}
-.selected .select-design{background:#a8ff2415;border-color:#97c66066;color:#ceefa4}
-.details-section{background:#232624;border-color:#ffffff18}.download-panel{border-color:#ffffff16}.tags span{background:#30362b;color:#c7d1bd}
-.button.dark{background:#a8ff24;color:#17210c}.button.disabled{background:#373d32;color:#a0a895}
-.text-link{color:#cee7ad}.plain{color:#b5c29f}
-.facts{border-color:#ffffff1c}.fact-grid article>span{color:#b7c1a8}
-.tabs{background:#30352a}.tabs button{color:#b5c29f}.tabs button[aria-selected=true]{background:#d6e5c2;color:#25341b}
-.notice{background:#303626;border-color:#4e5b3e;color:#c8d4b8}.notice strong{color:#e1edce}
-.steps li:before{background:#333d29;border-color:#576945;color:#cfdfa9}.steps li:after{background:#49523e}
-.path{background:#2b3225}.copy{background:#c7d8ae;border-color:#a7bd87;color:#243319}
-.build-guide{background:#282e23;border-color:#424e37}.build-guide p,.build-guide li{color:#bbc8ab}
-details,footer{border-color:#ffffff1a}footer>span{color:#9ea88f}.codebox{background:#141a11}
-@media(max-width:1050px){.design-grid{gap:20px}.design-card{padding:10px 5px 20px}}
-@media(max-width:620px){.design-grid{gap:12px;margin:20px -10px}.design-card,.design-card.selected{padding:7px 0 15px;border-radius:9px}.watch-shell{padding:0;margin:0 auto}.watch-case{position:static;padding:0;border-radius:0}.watch-case svg{border-radius:0}.design-card h3{font-size:12px;letter-spacing:.18em;margin:12px 0}.design-card p{font-size:10px;min-height:48px;margin:0 7px 12px}.select-design{width:calc(100% - 14px);font-size:10px;padding:10px 8px}.download-panel{border-color:#ffffff1a}.intro h1{font-size:68px}}
+
+.studio{padding:80px 0;scroll-margin-top:30px}.studio>p{max-width:760px;color:#62695d;line-height:1.6}.studio-grid{display:grid;grid-template-columns:minmax(240px,1fr) minmax(220px,1fr);gap:60px;margin:40px 0}.studio-hardware{max-width:470px;margin:35px auto;padding:10px;border:3px solid #626661;border-radius:54px;background:linear-gradient(135deg,#8b8e89,#222,#777);box-shadow:0 20px 60px #0008;position:relative}.studio-hardware:before,.studio-hardware:after{content:"";position:absolute;z-index:-1;background:repeating-linear-gradient(#252824 0 3px,#30332e 3px 5px);width:46%;height:45px;left:27%;border-radius:14px}.studio-hardware:before{top:-38px}.studio-hardware:after{bottom:-38px}#studio-canvas{display:block;width:100%;height:auto;border-radius:40px;background:#000;touch-action:pan-y}.studio-controls{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-content:start}.studio-controls label{display:flex;flex-direction:column;gap:9px;font-size:14px}.studio-controls input,.studio-controls select{min-width:0;width:100%;padding:12px;background:#20231f;color:#eee;border:1px solid #51554b;border-radius:8px;font:inherit}.studio-controls .check{flex-direction:row;align-items:center}.studio-controls .check input{width:20px}.studio-actions{display:flex;gap:8px;flex-wrap:wrap}.studio-actions button{padding:10px;border:1px solid #686d61;border-radius:7px;background:#272b23;color:white}#studio-action{font-size:14px;line-height:1.5;min-height:66px}.studio details{padding:24px;border:1px solid #51554b;border-radius:12px}.studio details p{line-height:1.7}.studio a{color:#425d26}@media(max-width:700px){.studio-grid{grid-template-columns:1fr;gap:25px}.studio{padding:40px 0}.studio-controls{gap:14px}.studio-hardware{max-width:370px}}

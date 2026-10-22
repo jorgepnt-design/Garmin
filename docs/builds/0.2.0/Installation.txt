@@ -1,0 +1,19 @@
+Jorge Venu X1 – 0.2.0
+
+Vier Builds mit SDK 9.3.0 für das offizielle Venu-X1-Profil kompiliert.
+Noch kein erfolgreicher Simulatorlauf oder Praxistest dieser Version.
+
+Änderungen: Antialiasing für eigene Schriften eingeschaltet.
+Werte und Beschriftungen in festen Pixelgrößen. Distanz und Einheit getrennt.
+Neuer weißer Model 3 mit schwarzem/rotem Seitenstreifen.
+Wetter und Tagesaktivität über Garmin-Gedrückt-halten (kein kurzes Tippen).
+Die Tagesaktivität öffnet Garmins Schritte-Ansicht.
+Akku-Gedrückt-halten hängt von Garmins unterstützter Zielansicht ab.
+Weckzeit bleibt manuell; keine automatische Alarmanzeige oder Alarm-Verknüpfung.
+
+Installation: zunächst nur eine PRG aus diesem Ordner nach GARMIN/APPS kopieren.
+Alte Version derselben Variante ersetzen. Keine ZIP auf die Uhr kopieren.
+Nach sicherem Trennen: Zifferblatt nach links wischen → Displaydesign → wählen → Anwenden.
+
+Browser-Vorschau: https://jorgepnt-design.github.io/Garmin/#studio
+Sie führt keine PRGs aus und ersetzt keine Prüfung auf der Uhr.

@@ -1,44 +1,41 @@
-"""Create limited digit bitmap fonts for the Venu X1 (Pillow required)."""
+"""Generate antialiased pixel-sized fonts plus matching browser atlas metadata."""
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-
-ROOT = Path(__file__).resolve().parents[1]
-FONTS = ROOT / 'shared/resources/fonts'
-FONTS.mkdir(parents=True, exist_ok=True)
-CHARACTERS = '0123456789:'
-
-def make(name, path, height, digit_width, colon_width, italic=False):
-    font = ImageFont.truetype(path, 180)
-    top = min(font.getbbox(c, anchor='ls')[1] for c in '0123456789')
-    bottom = max(font.getbbox(c, anchor='ls')[3] for c in '0123456789')
-    scale = height / (bottom-top)
-    atlas = Image.new('RGBA', (digit_width*10+colon_width, height), (255,255,255,0))
-    rows = []
-    x = 0
-    for c in CHARACTERS:
-        width = colon_width if c == ':' else digit_width
-        left, y1, right, y2 = font.getbbox(c, anchor='ls')
-        mask = Image.new('L', (right-left+6, bottom-top), 0)
-        ImageDraw.Draw(mask).text((3-left,-top), c, font=font, anchor='ls', fill=255)
-        mask = mask.resize((width,height), Image.Resampling.LANCZOS)
-        if italic:
-            # The face uses a condensed slanted athletic numeral style.
-            mask = mask.transform(mask.size, Image.Transform.AFFINE, (1,.11,-height*.055,0,1,0), resample=Image.Resampling.BICUBIC)
-        glyph = Image.new('RGBA',mask.size,(255,255,255,0))
-        glyph.putalpha(mask)
-        atlas.paste(glyph,(x,0))
-        rows.append(f'char id={ord(c)} x={x} y=0 width={width} height={height} xoffset=0 yoffset=0 xadvance={width} page=0 chnl=15')
-        x += width
-    atlas.save(FONTS / (name+'.png'))
-    content = '\n'.join([f'info face="Jorge {name}" size={height} bold=0 italic={int(italic)} charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=0,0', f'common lineHeight={height} base={height} scaleW={atlas.width} scaleH={atlas.height} pages=1 packed=0', f'page id=0 file="{name}.png"', f'chars count={len(rows)}', *rows])+'\n'
-    (FONTS / (name+'.fnt')).write_text(content,encoding='utf-8')
-
-bold='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
-serif='/usr/share/fonts/opentype/urw-base35/NimbusRoman-Regular.otf'
-for name, path, italic in [('bold',bold,False),('sport',bold,True),('elegant',serif,False)]:
-    make(name, path, 132, 74, 24, italic)
-    make(name+'-seconds', path, 63, 30, 12, italic)
+import json, shutil
+ROOT=Path(__file__).resolve().parents[1]
+OUT=ROOT/'shared/resources/fonts'; OUT.mkdir(parents=True,exist_ok=True)
+WEB=ROOT/'docs/assets/fonts'; WEB.mkdir(parents=True,exist_ok=True)
+BOLD='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+SANS='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+SERIF='/usr/share/fonts/opentype/urw-base35/NimbusRoman-Regular.otf'
+def make(name,path,height,chars,digit=None,colon=None,italic=False):
+    font=ImageFont.truetype(path,240)
+    boxes={c:font.getbbox(c,anchor='ls') for c in chars}
+    top=min(b[1] for b in boxes.values()); bottom=max(b[3] for b in boxes.values())
+    scale=height/(bottom-top)
+    widths={c:(colon if c==':' and colon else digit if c.isdigit() and digit else max(4,round(font.getlength(c)*scale))) for c in chars}
+    atlas=Image.new('RGBA',(sum(widths.values()),height),(255,255,255,0)); rows=[]; glyphs={}; x=0
+    for c in chars:
+        w=widths[c]; l,_,r,_=boxes[c]
+        mask=Image.new('L',(max(r-l+8,8),bottom-top),0)
+        ImageDraw.Draw(mask).text((4-l,-top),c,font=font,anchor='ls',fill=255)
+        mask=mask.resize((w,height),Image.Resampling.LANCZOS)
+        if italic: mask=mask.transform(mask.size,Image.Transform.AFFINE,(1,.08,-height*.04,0,1,0),resample=Image.Resampling.BICUBIC)
+        tile=Image.new('RGBA',(w,height),(255,255,255,0)); tile.putalpha(mask); atlas.paste(tile,(x,0))
+        rows.append(f'char id={ord(c)} x={x} y=0 width={w} height={height} xoffset=0 yoffset=0 xadvance={w} page=0 chnl=15'); glyphs[c]={'x':x,'w':w}; x+=w
+    atlas.save(OUT/(name+'.png'))
+    (OUT/(name+'.fnt')).write_text('\n'.join([f'info face="Jorge {name}" size={height} bold=0 italic=0 unicode=1 smooth=1 aa=1',f'common lineHeight={height} base={height} scaleW={x} scaleH={height} pages=1 packed=0',f'page id=0 file="{name}.png"',f'chars count={len(rows)}',*rows])+'\n')
+    shutil.copy(OUT/(name+'.png'),WEB/(name+'.png'))
+    return {'height':height,'glyphs':glyphs}
+meta={}
+for name,path,it in [('bold',BOLD,False),('sport',BOLD,True),('elegant',SERIF,False)]:
+    meta[name]=make(name,path,122,'0123456789:',66,20,it)
+    meta[name+'-seconds']=make(name+'-seconds',path,56,'0123456789:',25,10,it)
+chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:.,%°-+ /'
+for name,h,path in [('value',25,BOLD),('label',14,SANS),('date',20,SANS)]: meta[name]=make(name,path,h,chars)
+(WEB/'atlas.json').write_text(json.dumps(meta))
 for slug in ('sport','elegant','tesla','portugal'):
     name=slug if slug in ('sport','elegant') else 'bold'
-    (ROOT/f'faces/{slug}/resources/fonts.xml').write_text(f'<resources><font id="ClockMain" filename="../../../shared/resources/fonts/{name}.fnt"/><font id="ClockSeconds" filename="../../../shared/resources/fonts/{name}-seconds.fnt"/></resources>\n',encoding='utf-8')
-print('Clock font resources generated for four faces.')
+    fonts={'ClockMain':name,'ClockSeconds':name+'-seconds','MetricValue':'value','MetricLabel':'label','Header':'date'}
+    (ROOT/f'faces/{slug}/resources/fonts.xml').write_text('<resources>'+''.join(f'<font id="{i}" filename="../../../shared/resources/fonts/{f}.fnt" antialias="true"/>' for i,f in fonts.items())+'</resources>\n')
+print('Generated shared native/browser antialiased fonts')

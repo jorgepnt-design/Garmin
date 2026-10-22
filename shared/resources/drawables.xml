@@ -1,1 +1,2 @@
-<resources><bitmap id="LauncherIcon" filename="icon.svg"/></resources>
+<resources><bitmap id="LauncherIcon" filename="icon.svg"/><bitmap id="Car" filename="car.png" dithering="none"/></resources>
+

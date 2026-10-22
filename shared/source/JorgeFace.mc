@@ -21,11 +21,18 @@ class JorgeFace extends WatchUi.WatchFace {
     var height = 0;
     var mainFont;
     var secondsFont;
+    var valueFont;
+    var labelFont;
+    var headerFont;
+    var carBitmap;
 
     function initialize() {
         WatchFace.initialize();
         mainFont = WatchUi.loadResource(Rez.Fonts.ClockMain);
         secondsFont = WatchUi.loadResource(Rez.Fonts.ClockSeconds);
+        valueFont = WatchUi.loadResource(Rez.Fonts.MetricValue);
+        labelFont = WatchUi.loadResource(Rez.Fonts.MetricLabel);
+        headerFont = WatchUi.loadResource(Rez.Fonts.Header);
     }
 
     function onEnterSleep() {
@@ -107,39 +114,10 @@ class JorgeFace extends WatchUi.WatchFace {
     }
 
     function drawCar(dc) {
-        // Original vector sedan illustration, not a Tesla logo or photograph.
         dc.setColor(0xFF2438, Graphics.COLOR_BLACK);
-        line(dc, 38, 304, 410, 304);
-        dc.setColor(0x56636B, Graphics.COLOR_BLACK);
-        var points = [[65,300],[76,284],[123,277],[162,247],[245,244],
-                      [292,263],[347,275],[379,287],[382,308],[347,312],
-                      [331,293],[307,293],[291,312],[142,312],[126,293],
-                      [102,293],[88,312],[65,308],[65,300]];
-        dc.fillPolygon(points);
-        dc.setColor(0xD9DEE5, Graphics.COLOR_BLACK);
-        for (var i = 1; i < points.size(); i += 1) {
-            line(dc, points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
-        }
-        line(dc, 137,277, 174,254);
-        line(dc, 174,254, 239,252);
-        line(dc, 239,252, 280,274);
-        line(dc, 137,277, 280,274);
-        line(dc, 202,254, 202,302);
-        dc.setColor(0x11171C, Graphics.COLOR_BLACK);
-        dc.fillPolygon([[137,277],[174,254],[239,252],[280,274]]);
-        for (var wheel = 0; wheel < 2; wheel += 1) {
-            var x = wheel == 0 ? 114 : 319;
-            dc.setColor(0x080A0C, Graphics.COLOR_BLACK);
-            dc.fillCircle(px(x), py(311), px(21));
-            dc.setColor(0x8A969E, Graphics.COLOR_BLACK);
-            dc.drawCircle(px(x), py(311), px(17));
-            line(dc, x-12,299,x+12,323);
-            line(dc, x-12,323,x+12,299);
-            line(dc, x-17,311,x+17,311);
-            line(dc, x,294,x,328);
-            dc.setColor(0xFF2438, Graphics.COLOR_BLACK);
-            line(dc,x+9,302,x+9,320);
-        }
+        line(dc, 30, 306, 418, 306);
+        if (carBitmap == null) { carBitmap = WatchUi.loadResource(Rez.Drawables.Car); }
+        dc.drawBitmap(40, 242, carBitmap);
     }
 
     function metricIcon(dc, x, kind) {
@@ -197,12 +175,15 @@ class JorgeFace extends WatchUi.WatchFace {
     }
 
     function metric(dc, x, value, label, color) {
-        text(dc, x, 390, Graphics.FONT_SMALL, value, color, Graphics.TEXT_JUSTIFY_CENTER);
-        text(dc, x, 431, Graphics.FONT_XTINY, label, 0xA0A5AC, Graphics.TEXT_JUSTIFY_CENTER);
+        // Limit text to one 120 px column, including extreme distance values.
+        if (dc.getTextWidthInPixels(value, valueFont) > 120) { value = "999+"; }
+        text(dc, x, 394, valueFont, value, color, Graphics.TEXT_JUSTIFY_CENTER);
+        text(dc, x, 431, labelFont, label, 0xA0A5AC, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function onUpdate(dc) {
         width = dc.getWidth();
+        if (dc has :setAntiAlias) { dc.setAntiAlias(true); }
         height = dc.getHeight();
         setTheme();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
@@ -223,24 +204,24 @@ class JorgeFace extends WatchUi.WatchFace {
         var dateText = days[date.day_of_week - 1] + ", " + date.day.format("%02d") +
                        ". " + months[date.month - 1];
         var top = theme == 3 ? 94 : 47;
-        text(dc, 35, top, Graphics.FONT_XTINY, dateText, secondary, Graphics.TEXT_JUSTIFY_LEFT);
-        text(dc, 411, top, Graphics.FONT_XTINY, battery, accent, Graphics.TEXT_JUSTIFY_RIGHT);
+        text(dc, 35, top, headerFont, dateText, secondary, Graphics.TEXT_JUSTIFY_LEFT);
+        text(dc, 411, top, headerFont, battery, accent, Graphics.TEXT_JUSTIFY_RIGHT);
         if (theme == 3) { drawPortugal(dc); }
         if (theme == 1) {
             dc.setColor(accent, Graphics.COLOR_BLACK);
-            line(dc, 35, 105, 413, 105);
-            line(dc, 35, 335, 413, 335);
+            line(dc, 35, 95, 413, 95);
+            line(dc, 35, 320, 413, 320);
         }
-        drawClock(dc, clock, theme == 3 ? 155 : (theme == 2 ? 100 : 120), true, false);
+        drawClock(dc, clock, theme == 3 ? 155 : (theme == 2 ? 104 : 120), true, false);
         if (theme == 2) { drawCar(dc); }
         if (theme == 0) {
             dc.setColor(0x263025, Graphics.COLOR_BLACK);
             for (var n = 0; n < 3; n += 1) {
                 dc.setColor(0x263025, Graphics.COLOR_BLACK);
                 dc.setPenWidth(7);
-                dc.drawCircle(px(82 + n * 142), py(397), px(63));
+                dc.drawCircle(px(82 + n * 142), py(394), px(63));
                 dc.setColor(accent, Graphics.COLOR_BLACK);
-                dc.drawArc(px(82+n*142),py(397),px(63),Graphics.ARC_CLOCKWISE,90, n==1 ? 170 : 210);
+                dc.drawArc(px(82+n*142),py(394),px(63),Graphics.ARC_CLOCKWISE,90, n==1 ? 170 : 210);
             }
             dc.setPenWidth(1);
             dc.setColor(accent, Graphics.COLOR_BLACK);
@@ -258,8 +239,8 @@ class JorgeFace extends WatchUi.WatchFace {
         metricIcon(dc,224,1);
         metricIcon(dc,366,2);
         metric(dc, 82, temperature + "°C", weatherOld ? "WETTER ALT" : "WETTER", accent);
-        metric(dc, 224, distance + " km", "HEUTE", theme == 1 ? accent : Graphics.COLOR_WHITE);
-        metric(dc, 366, alarm, "MANUELL*", theme == 3 ? secondary : accent);
+        metric(dc, 224, distance, "KM HEUTE", theme == 1 ? accent : Graphics.COLOR_WHITE);
+        metric(dc, 366, alarm, "MANUELL", theme == 3 ? secondary : accent);
     }
 }
 

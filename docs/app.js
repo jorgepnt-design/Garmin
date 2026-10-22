@@ -3,7 +3,7 @@ const REPO = "jorgepnt-design/Garmin";
 const designs = [
  {id:"sport",name:"Sport",accent:"#a8ff24",description:"Klare Zahlen, Neongrün und drei Rundanzeigen. Dein sportlicher Begleiter für jeden Tag."},
  {id:"elegant",name:"Elegant",accent:"#e8cd91",description:"Champagnergold auf tiefem Schwarz. Reduzierte Linien und eine ruhige, elegante Aufteilung."},
- {id:"tesla",name:"Tesla",accent:"#ff2438",description:"Rot, Weiß und eine selbst gezeichnete Limousine. Inspiriert von deinem automobilen Stil."},
+ {id:"tesla",name:"Tesla",accent:"#ff2438",description:"Dein weißer Model 3 mit schwarzem Seitenstreifen und roten Akzenten. Inspiriert von deinem automobilen Stil."},
  {id:"portugal",name:"Portugal",accent:"#00c765",description:"Grün, Rot und goldene Akzente. Ein Stück Portugal an deinem Handgelenk."}
 ];
 let selected = "sport";
@@ -75,7 +75,7 @@ function updateDetails() {
     link.tabIndex=0;
     link.textContent=d.name+" · PRG herunterladen ↓";
     el("release-status").textContent="Build verfügbar · "+asset.tag+(asset.pre?" · Vorabversion":"");
-    el("release-note").textContent="Echte Release-Datei. Ein veröffentlichter Build bestätigt keinen Uhrentest. Release-Hinweise lesen und danach per USB übertragen.";
+    el("release-note").textContent="Version 0.2.0: neue Schriftglättung, feste Textbereiche, weißer Tesla und Gedrückt-halten-Funktionen. Kompiliert, aber noch nicht im Garmin-Simulator oder auf deiner Uhr bestätigt. Erst ein Design testen.";
  } else {
     const messages={loading:"Downloadstatus wird geprüft …",empty:"Noch kein installierbarer Build veröffentlicht.",error:"Status konnte nicht geladen werden. Bitte erneut prüfen.",ready:"Für dieses Design ist noch kein Build verfügbar."};
     el("release-status").textContent=messages[releaseState]+(checkedAt?" · "+checkedAt:"");
@@ -96,6 +96,10 @@ function validAsset(a,slug) {
  } catch(_) { return false; }
 }
 async function checkReleases() {
+ if (window.JORGE_CURRENT_BUILD) {
+  releaseAssets=new Map(designs.map(d=>[d.id,{url:"./builds/0.2.0/Jorge-"+d.id+".prg",tag:"0.2.0",pre:true}]));
+  releaseState="ready";el("retry").disabled=false;updateDetails();return;
+ }
  releaseState="loading";checkedAt="";el("retry").disabled=true;updateDetails();
  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
  try {
