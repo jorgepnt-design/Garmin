@@ -12,7 +12,7 @@ let live = false, aod = false, releaseState = "loading", releaseAssets = new Map
 const el = id => document.getElementById(id);
 function escapeXml(value) { return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c])); }
 function previewSvg(d) {
- try{const saved=JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+d.id));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image))return '<svg viewBox="0 0 448 486" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+escapeXml(d.name+' – dein gespeicherter Entwurf')+'"><image href="'+saved.image+'" width="448" height="486"/></svg>';}catch{}
+ try{const saved=(window.JorgeSavedPreviews?.[d.id]||JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+d.id)));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image))return '<svg viewBox="0 0 448 486" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+escapeXml(d.name+' – dein gespeicherter Entwurf')+'"><image href="'+saved.image+'" width="448" height="486"/></svg>';}catch{}
 
  const config={
  sport:{crop:[98,74,440,510],screen:[115,129,398,391],clock:[134,207,365,138],base:331},
@@ -83,7 +83,7 @@ function updateDetails() {
     el("release-status").textContent=messages[releaseState]+(checkedAt?" · "+checkedAt:"");
     el("release-note").textContent="Der Quellcode ist vorhanden. Zuerst mit dem Garmin SDK kompilieren und auf der Venu X1 testen. Der Browser kann die Datei nicht auf die Uhr installieren.";
  }
- try{const saved=JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+selected));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image)){
+ try{const saved=(window.JorgeSavedPreviews?.[selected]||JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+selected)));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image)){
  link.href='./editor.html?design='+selected;link.classList.remove('disabled');link.setAttribute('aria-disabled','false');link.tabIndex=0;link.textContent='Eigenen Entwurf öffnen / PRG bauen';el('release-status').textContent='Dein gespeicherter Entwurf';el('release-note').textContent='Deine Änderungen sind gespeichert. Im Editor die aktuelle Designdatei für die Uhr speichern und mit build_custom.py bauen. Die Standard-PRG enthält deine Änderungen nicht.';
  }}catch{}
  document.querySelectorAll(".guide .notice").forEach(n=>{
@@ -156,3 +156,10 @@ document.querySelectorAll("[data-copy]").forEach(button=>button.addEventListener
 el("retry").addEventListener("click",checkReleases);
 renderCards();updateDetails();checkReleases();setInterval(tick,1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick();});
+
+async function loadSavedDesigns(){
+ if(!window.JorgeDesignStore||!el('saved-design-cards'))return;
+ try{const rows=await JorgeDesignStore.create().list();window.JorgeSavedPreviews={};const cards=rows.map(row=>{let preview=row.preview;try{preview=preview||JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+row.id))?.image;}catch{}if(preview&&!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(preview))preview=null;if(preview)window.JorgeSavedPreviews[row.id]={name:row.name,image:preview};const card=document.createElement('article');card.className='design-card';if(preview){const img=document.createElement('img');img.src=preview;img.alt=row.name+' – gespeicherter Entwurf';img.style='width:100%;border-radius:20px;background:#000';card.append(img);}const title=document.createElement('h3');title.textContent=row.name;card.append(title);const link=document.createElement('a');link.className='button dark';link.textContent='Gespeichertes Design öffnen ↗';link.href='./editor.html?design='+encodeURIComponent(row.id);card.append(link);return card;});el('saved-design-cards').replaceChildren(...cards);el('saved-collection').hidden=!cards.length;renderCards();updateDetails();
+ }catch{el('saved-collection').hidden=true;}
+}
+loadSavedDesigns();
