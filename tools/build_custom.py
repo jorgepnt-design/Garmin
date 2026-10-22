@@ -5,12 +5,12 @@ from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
 ROOT=Path(__file__).resolve().parents[1]
 FONTS=ROOT/'docs/assets/editor-fonts'
-TYPES={'time','seconds','date','battery','temperature','distance','alarmCount','alarmStatus','text','image','icon'}
+TYPES={'time','hours','minutes','seconds','date','battery','temperature','distance','alarmCount','alarmStatus','text','image','icon'}
 def validate(d):
     if d.get('version')!=1 or not isinstance(d.get('elements'),list) or len(d['elements'])>40:raise ValueError('Expected editor format v1, at most 40 elements')
     if not re.fullmatch('#[a-fA-F0-9]{6}',d.get('background','')):raise ValueError('Invalid background')
     for e in d['elements']:
-        if e.get('type') not in TYPES or e.get('font') not in {'sans','bold','serif','mono'}:raise ValueError('Unknown field or font')
+        if e.get('type') not in TYPES or e.get('font') not in {'sans','bold','serif','mono',*[('original-'+n) for n in ['sport','elegant','bold','sport-seconds','elegant-seconds','bold-seconds','date','battery','value','label']]}:raise ValueError('Unknown field or font')
         for k,lo,hi in [('x',0,447),('y',0,485),('size',1 if e['type']=='icon' else 12,150)]:
             if type(e.get(k)) not in (int,float) or not math.isfinite(e[k]) or not lo<=e[k]<=hi:raise ValueError('Invalid '+k)
         if not re.fullmatch('#[a-fA-F0-9]{6}',e.get('color','')):raise ValueError('Invalid color')
@@ -23,6 +23,12 @@ def validate(d):
     return d
 
 def font_resource(out,name,font,size,chars):
+    if font.startswith('original-'):
+        original=font[9:];meta=json.loads((ROOT/'docs/assets/fonts/atlas.json').read_text())[original];scale=size/meta['height'];height=size;baseline=size
+        chars=''.join(meta['glyphs']);widths={c:max(1,round(meta['glyphs'][c]['w']*scale)) for c in chars};atlas=Image.new('L',(sum(widths.values()),height));source=Image.open(ROOT/'shared/resources/fonts'/(original+'.png')).convert('L');x=0;rows=[]
+        for c,w in widths.items():
+            g=meta['glyphs'][c];im=source.crop((g['x'],0,g['x']+g['w'],meta['height'])).resize((w,height),Image.Resampling.LANCZOS);atlas.paste(im,(x,0));rows.append(f'char id={ord(c)} x={x} y=0 width={w} height={height} xoffset=0 yoffset=0 xadvance={w} page=0 chnl=15');x+=w
+        atlas.convert('RGB').save(out/(name+'.png'));(out/(name+'.fnt')).write_text('\n'.join([f'info face="{name}" size={size} bold=0 italic=0 unicode=1 smooth=1 aa=1',f'common lineHeight={height} base={baseline} scaleW={x} scaleH={height} pages=1 packed=0 alphaChnl=4 redChnl=0 greenChnl=0 blueChnl=0',f'page id=0 file="{name}.png"',f'chars count={len(rows)}',*rows])+'\n');return
     ft=ImageFont.truetype(str(FONTS/(font+'.ttf')),size);height=math.ceil(size*1.17);baseline=round(size*.93)
     widths={c:max(2,round(ft.getlength(c))) for c in chars};atlas=Image.new('L',(sum(widths.values()),height));draw=ImageDraw.Draw(atlas);x=0;rows=[]
     for c,w in widths.items():
@@ -38,6 +44,14 @@ def static_image(e):
         if im.width>448 or im.height>486:raise ValueError('Embedded image must be normalized to 448 x 486 or smaller')
         return im.convert('RGBA').resize((round(e['width']),round(e['height'])),Image.Resampling.LANCZOS)
     if kind=='text':
+        if e['font'].startswith('original-'):
+            name=e['font'][9:];meta=json.loads((ROOT/'docs/assets/fonts/atlas.json').read_text())[name];scale=s/meta['height'];source=Image.open(ROOT/'docs/assets/fonts'/(name+'.png'));pieces=[]
+            for c in e['text']:
+                if c not in meta['glyphs']:raise ValueError('Character unavailable in original font: '+c)
+                g=meta['glyphs'][c];pieces.append(source.crop((g['x'],0,g['x']+g['w'],meta['height'])).resize((max(1,round(g['w']*scale)),s),Image.Resampling.LANCZOS))
+            im=Image.new('RGBA',(max(1,sum(p.width for p in pieces)),s));x=0
+            for p in pieces:im.paste(p,(x,0));x+=p.width
+            tint=Image.new('RGBA',im.size,color);tint.putalpha(im.getchannel('A'));return tint
         ft=ImageFont.truetype(str(FONTS/(e['font']+'.ttf')),s);im=Image.new('RGBA',(max(1,math.ceil(ft.getlength(e['text']))+2),math.ceil(s*1.17)));ImageDraw.Draw(im).text((0,round(s*.93)),e['text'],font=ft,fill=color,anchor='ls');return im
     k=e['icon'];w=round(e.get('width',s)) if k=='line' else s;h=round(e.get('height',2)) if k=='line' else s
     if not 1<=w<=448 or not 1<=h<=486:raise ValueError('Invalid icon dimensions')
@@ -74,7 +88,7 @@ def generate(d,out):
         key=(e['font'],round(e['size']))
         if key not in fontids:
             name='Font'+str(len(fontids));fontids[key]=name;font_resource(res,name,*key,chars);resources.append(f'<font id="{name}" filename="{name}.fnt" antialias="true"/>');initial.append(f'fonts[{json.dumps(name)}] = WatchUi.loadResource(Rez.Fonts.{name});')
-        name=fontids[key];expr={'time':'hh + ":" + mm','seconds':'":" + clock.sec.format("%02d")','date':'date.day.format("%02d") + "." + date.month.format("%02d") + "." + date.year.toString()','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km + " km"','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
+        name=fontids[key];expr={'time':'hh + ":" + mm','hours':'hh','minutes':'":"+mm','seconds':'":" + clock.sec.format("%02d")','date':'date.day.format("%02d") + "." + date.month.format("%02d") + "." + date.year.toString()','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
         render.append(f'dc.setColor(0x{e["color"][1:]},Graphics.COLOR_TRANSPARENT); dc.drawText({x},{y},fonts[{json.dumps(name)}],{expr},Graphics.TEXT_JUSTIFY_LEFT);')
     fontxml=[s for s in resources if s.startswith('<font')];bitmaps=[s for s in resources if s.startswith('<bitmap')]
     Image.new('RGB',(65,65),'black').save(res/'launcher.png');bitmaps.append('<bitmap id="LauncherIcon" filename="launcher.png"/>')
