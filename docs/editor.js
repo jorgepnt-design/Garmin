@@ -53,5 +53,5 @@
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));$('edit').hidden=b.dataset.tab!=='edit';$('export').hidden=b.dataset.tab!=='export';});$('live').onchange=draw;
  atlas=await(await fetch('assets/fonts/atlas.json?v=022')).json();await Promise.all(Object.keys(atlas).map(name=>new Promise((r,j)=>{const i=new Image();i.onload=r;i.onerror=j;i.src='assets/fonts/'+name+'.png?v=022';atlasImages[name]=i;})));
  await Promise.all(fonts.map(async f=>{const font=new FontFace('Editor-'+f,'url(assets/editor-fonts/'+f+'.ttf)');document.fonts.add(await font.load());}));
- try{state=validate(JSON.parse(localStorage.getItem(KEY)));}catch{state=preset('Sport');}refresh();setInterval(draw,1000);
+ try{state=validate(JSON.parse(localStorage.getItem(KEY)));}catch{state=preset('Sport');}const chosen=new URLSearchParams(location.search).get('design'),names={sport:'Sport',elegant:'Elegant',tesla:'Tesla',portugal:'Portugal'};if(names[chosen]){remember();state=preset(names[chosen]);$('preset').value=names[chosen];}refresh();setInterval(draw,1000);
 })().catch(e=>{document.getElementById('message').textContent='Editor konnte nicht starten. Bitte neu laden. '+e.message;});
