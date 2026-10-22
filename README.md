@@ -3,9 +3,11 @@
 Vier eigenständige Connect-IQ-Zifferblätter für Jorge: **Sport, Elegant, Tesla und Portugal**.
 Alle vier können nebeneinander installiert werden; jede Variante hat eine eigene App-ID.
 
-**Status: Testversion 0.1.0 kompiliert.** Alle vier PRGs wurden mit Garmin Connect IQ SDK 9.3.0 und dem Venu-X1-Geräteprofil (API 6.0.3) erfolgreich und ohne Compilerwarnungen gebaut. Noch kein Simulator- oder Praxistest auf einer echten Uhr. Die native Grafik weicht noch von den Bildentwürfen der Website ab.
+**Status: Testversion 0.2.0 kompiliert, noch ohne erfolgreichen Simulator- oder Praxistest dieser Version.** Die Fotos der ersten Version haben Überlappungen und schlechte Schriftglättung gezeigt. Version 0.2.0 verwendet eigene Pixelgrößen für Werte/Labels, antialiasierte Schriften, eine weiße Model-3-Grafik mit Seitenstreifen und Garmin Hold-to-launch für Wetter und Tagesaktivität. Der manuelle Alarm öffnet keinen Wecker.
 
-Die PRGs und ein Gesamtpaket stehen im [GitHub-Prerelease v0.1.0](https://github.com/jorgepnt-design/Garmin/releases/tag/v0.1.0) bereit. Der private Signierschlüssel und die Garmin-SDK-/Geräteprofildateien sind nicht Teil dieses Repositorys.
+[Interaktive Browser-Vorschau](https://jorgepnt-design.github.io/Garmin/#studio) · [Vier PRGs als ZIP](https://jorgepnt-design.github.io/Garmin/builds/0.2.0/Jorge-Venu-X1-0.2.0.zip)
+
+Die Browser-Vorschau verwendet dieselben Schriftatlanten, ist aber eine separate Canvas-Implementierung und führt keine PRGs aus. Der offizielle Simulator gehört zum Garmin SDK und wird lokal mit Visual Studio Code/Monkey C gestartet (Strg+F5). In dieser Umgebung startet der Simulator nicht erfolgreich; es gibt deshalb keinen Laufzeitnachweis. Alle vier Builds sind mit SDK 9.3.0 und dem offiziellen venux1-Profil kompiliert.
 
 ## Die vier Varianten
 
