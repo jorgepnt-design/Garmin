@@ -1,7 +1,7 @@
 'use strict';
 (async()=>{
  const $=id=>document.getElementById(id),canvas=$('studio-canvas'),ctx=canvas.getContext('2d');
- let meta, images={},car=new Image(),ready=false,holdTimer;
+ let meta, images={},savedImages={},car=new Image(),ready=false,holdTimer;
  const load=src=>new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=src;});
  const color={sport:'#a8ff24',elegant:'#e8cd91',tesla:'#ff2438',portugal:'#00c765'};
  const fontName=()=>['sport','elegant'].includes($('studio-theme').value)?$('studio-theme').value:'bold';
@@ -20,6 +20,11 @@
   else{ctx.arc(x,352,14,0,Math.PI*2);ctx.stroke();[[0,343,0,352],[0,352,7,356],[-12,335,-18,341],[12,335,18,341],[-9,366,-12,372],[9,366,12,372]].forEach(v=>line(x+v[0],v[1],x+v[2],v[3],c));}
  }
  function draw(){if(!ready)return;const theme=$('studio-theme').value,a=color[theme],gold=theme==='elegant',pt=theme==='portugal';ctx.fillStyle='#000';ctx.fillRect(0,0,448,486);
+ try{const saved=JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+theme));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image)){
+ const old=savedImages[theme];if(!old||old.src!==saved.image){const img=new Image();img.onload=draw;img.src=saved.image;savedImages[theme]=img;}const img=savedImages[theme];if(img.complete)ctx.drawImage(img,0,0,448,486);
+ $('studio-download').href='./editor.html?design='+theme;$('studio-download').textContent='Gespeicherten Entwurf bearbeiten / eigene PRG bauen';$('studio-load').textContent='Dein gespeicherter Entwurf · Vorschau mit gespeicherten Beispielwerten. Zum Ändern im Editor öffnen.';return;
+ }}catch{}
+ $('studio-load').textContent='448 × 486 Pixel · Standarddesign';
  $('studio-download').href='./builds/0.2.3/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.3 herunterladen';
  const n=$('studio-live').checked?new Date():new Date('2026-10-22T'+($('studio-time').value||'20:35')+':42');
  const pad=x=>String(x).padStart(2,'0'),h=pad(n.getHours()),m=pad(n.getMinutes()),s=pad(n.getSeconds());

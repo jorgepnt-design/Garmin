@@ -12,6 +12,8 @@ let live = false, aod = false, releaseState = "loading", releaseAssets = new Map
 const el = id => document.getElementById(id);
 function escapeXml(value) { return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c])); }
 function previewSvg(d) {
+ try{const saved=JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+d.id));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image))return '<svg viewBox="0 0 448 486" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+escapeXml(d.name+' – dein gespeicherter Entwurf')+'"><image href="'+saved.image+'" width="448" height="486"/></svg>';}catch{}
+
  const config={
  sport:{crop:[98,74,440,510],screen:[115,129,398,391],clock:[134,207,365,138],base:331},
  elegant:{crop:[674,74,440,510],screen:[689,131,400,390],clock:[708,223,368,128],base:342},
@@ -81,6 +83,9 @@ function updateDetails() {
     el("release-status").textContent=messages[releaseState]+(checkedAt?" · "+checkedAt:"");
     el("release-note").textContent="Der Quellcode ist vorhanden. Zuerst mit dem Garmin SDK kompilieren und auf der Venu X1 testen. Der Browser kann die Datei nicht auf die Uhr installieren.";
  }
+ try{const saved=JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+selected));if(saved&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(saved.image)){
+ link.href='./editor.html?design='+selected;link.classList.remove('disabled');link.setAttribute('aria-disabled','false');link.tabIndex=0;link.textContent='Eigenen Entwurf öffnen / PRG bauen';el('release-status').textContent='Dein gespeicherter Entwurf';el('release-note').textContent='Deine Änderungen sind gespeichert. Im Editor die aktuelle Designdatei für die Uhr speichern und mit build_custom.py bauen. Die Standard-PRG enthält deine Änderungen nicht.';
+ }}catch{}
  document.querySelectorAll(".guide .notice").forEach(n=>{
     if(!n.dataset.original) n.dataset.original=n.innerHTML;
     if(asset && n.closest("#guide-iphone")===null) n.textContent="Für "+d.name+" ist ein kompilierter Testbuild verfügbar. Ein kompilierter Build bestätigt noch keinen Uhrentest. Anschließend die folgenden USB-Schritte verwenden.";
