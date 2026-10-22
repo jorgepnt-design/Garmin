@@ -75,7 +75,7 @@ function updateDetails() {
     link.tabIndex=0;
     link.textContent=d.name+" · PRG herunterladen ↓";
     el("release-status").textContent="Build verfügbar · "+asset.tag+(asset.pre?" · Vorabversion":"");
-    el("release-note").textContent="Version 0.2.0: neue Schriftglättung, feste Textbereiche, weißer Tesla und Gedrückt-halten-Funktionen. Kompiliert, aber noch nicht im Garmin-Simulator oder auf deiner Uhr bestätigt. Erst ein Design testen.";
+    el("release-note").textContent="Version 0.2.1: kräftige, größere Schriften, deutlich größere Akkuanzeige, klare Linien und Garmin-Alarmanzahl. Kompiliert, aber noch nicht im Garmin-Simulator oder auf deiner Uhr bestätigt. Erst ein Design testen.";
  } else {
     const messages={loading:"Downloadstatus wird geprüft …",empty:"Noch kein installierbarer Build veröffentlicht.",error:"Status konnte nicht geladen werden. Bitte erneut prüfen.",ready:"Für dieses Design ist noch kein Build verfügbar."};
     el("release-status").textContent=messages[releaseState]+(checkedAt?" · "+checkedAt:"");
@@ -83,7 +83,7 @@ function updateDetails() {
  }
  document.querySelectorAll(".guide .notice").forEach(n=>{
     if(!n.dataset.original) n.dataset.original=n.innerHTML;
-    if(asset && n.closest("#guide-iphone")===null) n.textContent="Für "+d.name+" wurde eine PRG-Datei im GitHub-Release gefunden. Die Release-Hinweise vor dem Download lesen; ein veröffentlichter Build bestätigt noch keinen Uhrentest. Anschließend die folgenden USB-Schritte verwenden.";
+    if(asset && n.closest("#guide-iphone")===null) n.textContent="Für "+d.name+" ist ein kompilierter Testbuild verfügbar. Ein kompilierter Build bestätigt noch keinen Uhrentest. Anschließend die folgenden USB-Schritte verwenden.";
     else n.innerHTML=n.dataset.original;
  });
 }
@@ -97,7 +97,7 @@ function validAsset(a,slug) {
 }
 async function checkReleases() {
  if (window.JORGE_CURRENT_BUILD) {
-  releaseAssets=new Map(designs.map(d=>[d.id,{url:"./builds/0.2.0/Jorge-"+d.id+".prg",tag:"0.2.0",pre:true}]));
+  releaseAssets=new Map(designs.map(d=>[d.id,{url:"./builds/0.2.1/Jorge-"+d.id+".prg",tag:"0.2.1",pre:true}]));
   releaseState="ready";el("retry").disabled=false;updateDetails();return;
  }
  releaseState="loading";checkedAt="";el("retry").disabled=true;updateDetails();

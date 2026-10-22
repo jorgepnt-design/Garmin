@@ -15,13 +15,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sdk", default=os.environ.get("CIQ_SDK_HOME"))
     parser.add_argument("--key", required=True, help="Local developer_key.der; never commit it")
-    parser.add_argument("--alarm", help="Optional manually displayed time, HH:MM; does not set an alarm")
     args = parser.parse_args()
     key = Path(args.key).expanduser().resolve()
     if not key.is_file():
         parser.error("Developer key not found.")
-    if args.alarm and not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", args.alarm):
-        parser.error("--alarm must be a valid 24-hour HH:MM time.")
     executable = "monkeyc.bat" if os.name == "nt" else "monkeyc"
     compiler = Path(args.sdk).expanduser() / "bin" / executable if args.sdk else None
     if compiler is None:
@@ -40,9 +37,6 @@ def main():
             shutil.rmtree(stage)
         shutil.copytree(ROOT / "shared", stage / "shared")
         shutil.copytree(ROOT / "faces" / face, stage / "faces" / face)
-        if args.alarm:
-            props = stage / "faces" / face / "resources" / "properties.xml"
-            props.write_text(props.read_text(encoding="utf-8").replace("--:--", args.alarm), encoding="utf-8")
         project = stage / "faces" / face
         destination = output / ("Jorge-" + face + ".prg")
         # Remove any stale output before starting, so failure cannot look successful.
@@ -62,3 +56,4 @@ if __name__ == "__main__":
         main()
     except subprocess.CalledProcessError as exc:
         sys.exit(exc.returncode)
+

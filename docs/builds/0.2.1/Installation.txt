@@ -1,0 +1,10 @@
+Jorge Venu X1 – Testversion 0.2.1
+Größere, kräftige Schriften ohne Schrägstellung oder Serifenschrift.
+Akku-Schrift 36 statt 20 px mit Batteriesymbol. Werte 32 statt 25 px, Labels 18 statt 14 px.
+Das Alarmfeld zeigt die von Garmin bereitgestellte Alarmanzahl. Keine nächste Weckzeit: Diese Uhrzeiten sind über Connect IQ nicht öffentlich zugänglich.
+Echten Wecker auf der Uhr einstellen: Zifferblatt nach links wischen → Uhren → Alarme → Neuer Alarm → Speichern.
+Die früher manuell eingetragene Anzeige AlarmTime wird nicht mehr verwendet.
+Alle vier PRGs mit SDK 9.3.0 und offiziellem venux1-Profil erfolgreich kompiliert. Pixelgrenzen für Uhrzeiten und Extremwerte geprüft; kein erfolgreicher Simulator- oder Praxistest dieser Version.
+Zunächst eine PRG-Datei nach GARMIN/APPS kopieren, die ältere Datei derselben Variante ersetzen.
+Danach sicher trennen und Zifferblatt nach links wischen → Displaydesign → Design wählen → nach links wischen → Anwenden.
+Browser-Vorschau: https://jorgepnt-design.github.io/Garmin/#studio (keine PRG-Laufzeit).

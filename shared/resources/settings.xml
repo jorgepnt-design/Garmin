@@ -1,6 +1,1 @@
-<resources><settings>
-  <setting propertyKey="@Properties.AlarmTime" title="@Strings.AlarmTitle" prompt="@Strings.AlarmPrompt">
-    <settingConfig type="alphaNumeric" maxLength="5"/>
-  </setting>
-</settings></resources>
-
+<resources/>

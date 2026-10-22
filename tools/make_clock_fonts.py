@@ -28,14 +28,14 @@ def make(name,path,height,chars,digit=None,colon=None,italic=False):
     shutil.copy(OUT/(name+'.png'),WEB/(name+'.png'))
     return {'height':height,'glyphs':glyphs}
 meta={}
-for name,path,it in [('bold',BOLD,False),('sport',BOLD,True),('elegant',SERIF,False)]:
-    meta[name]=make(name,path,122,'0123456789:',66,20,it)
+for name,path,it in [('bold',BOLD,False),('sport',BOLD,False),('elegant',BOLD,False)]:
+    meta[name]=make(name,path,128,'0123456789:',76,24,it)
     meta[name+'-seconds']=make(name+'-seconds',path,56,'0123456789:',25,10,it)
 chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:.,%°-+ /'
-for name,h,path in [('value',25,BOLD),('label',14,SANS),('date',20,SANS)]: meta[name]=make(name,path,h,chars)
+for name,h,path in [('value',32,BOLD),('label',18,BOLD),('date',22,BOLD),('battery',36,BOLD)]: meta[name]=make(name,path,h,chars)
 (WEB/'atlas.json').write_text(json.dumps(meta))
 for slug in ('sport','elegant','tesla','portugal'):
     name=slug if slug in ('sport','elegant') else 'bold'
-    fonts={'ClockMain':name,'ClockSeconds':name+'-seconds','MetricValue':'value','MetricLabel':'label','Header':'date'}
+    fonts={'ClockMain':name,'ClockSeconds':name+'-seconds','MetricValue':'value','MetricLabel':'label','Header':'date','Battery':'battery'}
     (ROOT/f'faces/{slug}/resources/fonts.xml').write_text('<resources>'+''.join(f'<font id="{i}" filename="../../../shared/resources/fonts/{f}.fnt" antialias="true"/>' for i,f in fonts.items())+'</resources>\n')
 print('Generated shared native/browser antialiased fonts')

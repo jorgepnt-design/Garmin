@@ -24,6 +24,7 @@ class JorgeFace extends WatchUi.WatchFace {
     var valueFont;
     var labelFont;
     var headerFont;
+    var batteryFont;
     var carBitmap;
 
     function initialize() {
@@ -33,6 +34,7 @@ class JorgeFace extends WatchUi.WatchFace {
         valueFont = WatchUi.loadResource(Rez.Fonts.MetricValue);
         labelFont = WatchUi.loadResource(Rez.Fonts.MetricLabel);
         headerFont = WatchUi.loadResource(Rez.Fonts.Header);
+        batteryFont = WatchUi.loadResource(Rez.Fonts.Battery);
     }
 
     function onEnterSleep() {
@@ -62,7 +64,8 @@ class JorgeFace extends WatchUi.WatchFace {
         var activity = ActivityMonitor.getInfo();
         distance = "--";
         if (activity != null && activity.distance != null) {
-            distance = (activity.distance / 100000.0).format("%.2f");
+            var km = activity.distance / 100000.0;
+            distance = km.format(km < 100 ? "%.2f" : (km < 1000 ? "%.1f" : "%.0f"));
         }
         temperature = "--";
         weatherOld = false;
@@ -122,7 +125,7 @@ class JorgeFace extends WatchUi.WatchFace {
 
     function metricIcon(dc, x, kind) {
         dc.setColor(theme == 1 ? accent : (kind == 2 && theme == 3 ? secondary : accent), Graphics.COLOR_BLACK);
-        dc.setPenWidth(2);
+        dc.setPenWidth(3);
         if (kind == 0) {
             dc.drawCircle(px(x-7), py(345), px(9));
             line(dc,x-7,330,x-7,334);
@@ -176,9 +179,9 @@ class JorgeFace extends WatchUi.WatchFace {
 
     function metric(dc, x, value, label, color) {
         // Limit text to one 120 px column, including extreme distance values.
-        if (dc.getTextWidthInPixels(value, valueFont) > 120) { value = "999+"; }
-        text(dc, x, 394, valueFont, value, color, Graphics.TEXT_JUSTIFY_CENTER);
-        text(dc, x, 431, labelFont, label, 0xA0A5AC, Graphics.TEXT_JUSTIFY_CENTER);
+        if (dc.getTextWidthInPixels(value, valueFont) > 120) { value = "--"; }
+        text(dc, x, 389, valueFont, value, color, Graphics.TEXT_JUSTIFY_CENTER);
+        text(dc, x, 431, labelFont, label, 0xD9DDE1, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function onUpdate(dc) {
@@ -204,8 +207,17 @@ class JorgeFace extends WatchUi.WatchFace {
         var dateText = days[date.day_of_week - 1] + ", " + date.day.format("%02d") +
                        ". " + months[date.month - 1];
         var top = theme == 3 ? 94 : 47;
-        text(dc, 35, top, headerFont, dateText, secondary, Graphics.TEXT_JUSTIFY_LEFT);
-        text(dc, 411, top, headerFont, battery, accent, Graphics.TEXT_JUSTIFY_RIGHT);
+        text(dc, 28, top + 6, headerFont, dateText, secondary, Graphics.TEXT_JUSTIFY_LEFT);
+        text(dc, 420, top - 5, batteryFont, battery, accent, Graphics.TEXT_JUSTIFY_RIGHT);
+        // A large percentage plus a crisp, proportionate battery outline.
+        var bx = 420 - dc.getTextWidthInPixels(battery, batteryFont) - 44;
+        dc.setColor(accent, Graphics.COLOR_BLACK);
+        dc.setPenWidth(2);
+        dc.drawRectangle(bx, top + 3, 32, 20);
+        dc.fillRectangle(bx + 33, top + 9, 3, 8);
+        var charge = System.getSystemStats().battery;
+        dc.fillRectangle(bx + 3, top + 6, (26 * charge / 100).toNumber(), 14);
+        dc.setPenWidth(1);
         if (theme == 3) { drawPortugal(dc); }
         if (theme == 1) {
             dc.setColor(accent, Graphics.COLOR_BLACK);
@@ -232,15 +244,13 @@ class JorgeFace extends WatchUi.WatchFace {
             line(dc, 153, 365, 153, 450);
             line(dc, 295, 365, 295, 450);
         }
-        var alarm = Application.Properties.getValue("AlarmTime");
-        if (alarm == null || alarm.length() != 5 ||
-            alarm.substring(2,3) != ":") { alarm = "--:--"; }
+        var alarm = System.getDeviceSettings().alarmCount.toString();
         metricIcon(dc,82,0);
         metricIcon(dc,224,1);
         metricIcon(dc,366,2);
         metric(dc, 82, temperature + "°C", weatherOld ? "WETTER ALT" : "WETTER", accent);
         metric(dc, 224, distance, "KM HEUTE", theme == 1 ? accent : Graphics.COLOR_WHITE);
-        metric(dc, 366, alarm, "MANUELL", theme == 3 ? secondary : accent);
+        metric(dc, 366, alarm, "ALARME", theme == 3 ? secondary : accent);
     }
 }
 
