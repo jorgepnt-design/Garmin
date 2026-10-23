@@ -23,11 +23,14 @@
    if(run.conclusion!=='success')throw Error('Der GitHub-Bau ist '+(run.conclusion==='cancelled'?'abgebrochen':'fehlgeschlagen')+'. Details: '+REPO+'/actions/runs/'+run.id);
    const release=await gh('/releases/tags/build-'+sha);
    if(!release?.body?.includes(sha))throw Error('Der veröffentlichte Download gehört zu einem anderen Bau. Bitte erneut umwandeln.');
-   const stem=slug+'-P9-'+design.buildId+'-venux1';
-   const asset=release.assets?.find(a=>a.name===stem+'.prg'&&a.size>0),preview=release.assets?.find(a=>a.name===stem+'.png'&&a.size>0),receipt=release.assets?.find(a=>a.name===stem+'.json'&&a.size>0);
+   const pattern=new RegExp('^'+slug+'-(P[1-9][0-9]*)-'+design.buildId+'-venux1\\.prg$');
+   const matches=(release.assets||[]).filter(a=>a.size>0&&pattern.test(a.name));
+   if(matches.length>1)throw Error('Der Bau enthält mehrere passende PRGs. Bitte den Download im GitHub-Bau prüfen.');
+   const asset=matches[0],renderer=asset?.name.match(pattern)?.[1],stem=asset?.name.slice(0,-4);
+   const preview=release.assets?.find(a=>a.name===stem+'.png'&&a.size>0),receipt=release.assets?.find(a=>a.name===stem+'.json'&&a.size>0);
    if(!asset||!preview||!receipt)throw Error('Der Bau ist fertig, aber die passende PRG fehlt im Release.');
-   const url=new URL(asset.browser_download_url);if(url.origin!=='https://github.com'||!url.pathname.startsWith('/jorgepnt-design/garmindesigner/releases/download/'))throw Error('Unerwartete Downloadadresse.');
-   return {url:url.href,name:asset.name,previewUrl:preview.browser_download_url,buildId:design.buildId,appName:(design.name||'Jorge Custom').slice(0,18)+' P9-'+design.buildId,sha,runUrl:REPO+'/actions/runs/'+run.id};
+   for(const item of [asset,preview,receipt]){const url=new URL(item.browser_download_url);if(url.origin!=='https://github.com'||url.pathname!=='/jorgepnt-design/garmindesigner/releases/download/build-'+sha+'/'+item.name)throw Error('Unerwartete Downloadadresse.');}
+   return {url:asset.browser_download_url,name:asset.name,previewUrl:preview.browser_download_url,buildId:design.buildId,renderer,appName:(design.name||'Jorge Custom').slice(0,18)+' '+renderer+'-'+design.buildId,sha,runUrl:REPO+'/actions/runs/'+run.id};
   }
   throw Error('Der Bau läuft länger als erwartet. Fortschritt: '+REPO+'/actions');
  }
