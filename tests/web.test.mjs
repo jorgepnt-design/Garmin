@@ -2,11 +2,13 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
+import designStore from '../docs/editor-storage.js';
 const html=readFileSync(new URL('../docs/index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../docs/app.js',import.meta.url),'utf8');
-async function open(releases=[],ok=true) {
+async function open(releases=[],ok=true,saved=null) {
  const dom=new JSDOM(html,{url:'https://example.com/Garmin/',runScripts:'outside-only',pretendToBeVisual:true});
  dom.window.fetch=async()=>({ok,status:ok?200:403,json:async()=>releases});
+ if(saved){dom.window.localStorage.setItem('jorge-editor-v1:'+saved.editorId,JSON.stringify(saved));dom.window.JorgeDesignStore={create:()=>designStore.create({local:dom.window.localStorage,idb:null})};}
  dom.window.eval(script);
  await new Promise(r=>setTimeout(r,20));
  return dom;
@@ -92,3 +94,5 @@ test('original artwork is the default for all four watch previews',async()=>{
  for(const image of d.querySelectorAll('.watch-case svg image')) assert.equal(image.getAttribute('href'),'./assets/original-designs.jpg');
  }finally{dom.window.close();}
 });
+
+test('overview rename persists without replacing newer design edits',async()=>{const dom=await open([],true,{version:1,name:'Elegant',editorId:'elegant',background:'#000000',elements:[{size:33,x:28,y:44}]});try{const w=dom.window,card=w.document.querySelector('[data-saved-id="elegant"]');assert.ok(card);assert.equal(card.querySelector('a').getAttribute('href'),'./editor.html?design=elegant');card.querySelector('button').click();const form=card.querySelector('form');assert.equal(form.hidden,false);const newer=JSON.parse(w.localStorage.getItem('jorge-editor-v1:elegant'));newer.elements[0].size=48;w.localStorage.setItem('jorge-editor-v1:elegant',JSON.stringify(newer));form.querySelector('input').value='Elegant Gold';await form.onsubmit({preventDefault(){}});const saved=JSON.parse(w.localStorage.getItem('jorge-editor-v1:elegant'));assert.equal(saved.name,'Elegant Gold');assert.equal(saved.elements[0].size,48);assert.equal(saved.editorId,'elegant');assert.equal(card.querySelector('h3').textContent,'Elegant Gold');const again=await open([],true,saved);try{assert.equal(again.window.document.querySelector('[data-saved-id="elegant"] h3').textContent,'Elegant Gold');}finally{again.window.close();}}finally{dom.window.close();}});
