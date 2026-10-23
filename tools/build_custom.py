@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Build an editor JSON (including embedded PNGs) as a Venu X1 watchface."""
-import argparse,base64,hashlib,io,json,math,os,re,subprocess,shutil,uuid
+import argparse,base64,hashlib,io,json,math,os,re,subprocess,shutil
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
-from xml.sax.saxutils import escape
 ROOT=Path(__file__).resolve().parents[1]
 FONTS=ROOT/'docs/assets/editor-fonts'
 TYPES={'time','hours','minutes','seconds','date','battery','temperature','distance','alarmCount','alarmStatus','text','image','icon'}
@@ -78,59 +77,23 @@ def static_image(e):
         for p in [(.5,.3,.35,.6),(.35,.6,.6,.72),(.6,.72,.5,.98),(.35,.6,.08,.93),(.18,.4,.5,.3),(.5,.3,.75,.5),(.75,.5,.95,.35)]:line(*p)
     return im
 
-def rendered_image(asset):
-    data=asset.get('data','')
-    if not isinstance(data,str) or not re.fullmatch('data:image/png;base64,[A-Za-z0-9+/=]+',data) or len(data)>3000000:raise ValueError('Invalid rendered asset')
-    im=Image.open(io.BytesIO(base64.b64decode(data.split(',')[1],validate=True)))
-    if im.width>16000 or im.height>486 or im.width*im.height>4000000:raise ValueError('Rendered asset dimensions too large')
-    return im.convert('RGBA')
-
-RENDERER_VERSION = "P2"
-def identity(d):
-    build_id = str(d.get("buildId") or hashlib.sha256(json.dumps(d,sort_keys=True).encode()).hexdigest()[:8]).upper()
-    if not re.fullmatch("[A-F0-9]{8}",build_id):raise ValueError("Invalid build identifier")
-    name = str(d.get("name") or "Jorge Custom")[:18]+" "+RENDERER_VERSION+"-"+build_id
-    app_id = uuid.uuid5(uuid.UUID("6f1d3c2e-5a4b-4c8d-9e7f-0a1b2c3d4e5f"),RENDERER_VERSION+":"+build_id+":"+hashlib.sha256(json.dumps(d,sort_keys=True).encode()).hexdigest()).hex
-    return build_id,name,app_id
-
 def generate(d,out):
-    validate(d);build_id,app_name,app_id=identity(d);out.mkdir(parents=True,exist_ok=True);res=out/'resources';res.mkdir(exist_ok=True);src=out/'source';src.mkdir(exist_ok=True)
-    resources=[];initial=[];render=[];fontids={};pixel_tables=[];chars='0123456789:.-% °CkmAKTIVUSSoMDiFra'
+    validate(d);out.mkdir(parents=True,exist_ok=True);res=out/'resources';res.mkdir(exist_ok=True);src=out/'source';src.mkdir(exist_ok=True)
+    resources=[];initial=[];render=[];fontids={};chars='0123456789:.-% °CkmAKTIVUS'
     for i,e in enumerate(d['elements']):
         if not e.get('visible',True):continue
         x,y=round(e['x']),round(e['y']);kind=e['type']
-        asset=d.get('renderAssets',{}).get(str(i))
-        if d.get('renderVersion')==1:
-            if asset is None:raise ValueError('Missing rendered asset; save this design again in the editor')
-            im=rendered_image(asset)
-            if asset.get('kind')=='bitmap':
-                bx,by=asset.get('x'),asset.get('y')
-                if type(bx)!=int or type(by)!=int or not 0<=bx<448 or not 0<=by<486 or im.width>448 or im.height>486:raise ValueError('Invalid bitmap bounds')
-                im.save(res/f'Exact{i}.png');resources.append(f'<bitmap id="Exact{i}" filename="Exact{i}.png" packingFormat="png" automaticPalette="false" dithering="none"/>');initial.append(f'images[{i}] = WatchUi.loadResource(Rez.Drawables.Exact{i});');render.append(f'dc.drawBitmap({bx},{by},images[{i}]);');continue
-            if asset.get('kind')!='font' or im.height!=asset.get('height'):raise ValueError('Invalid font pixel asset')
-            required={'time':'0123456789:','hours':'0123456789','minutes':'0123456789:','seconds':'0123456789:','date':'0123456789. SoMDiFra','battery':'0123456789%','temperature':'0123456789-°C','distance':'0123456789.-','alarmCount':'0123456789','alarmStatus':'AKTIVUS'}.get(kind,'')
-            missing=set(required)-set(asset.get('glyphs',{}))
-            if missing:raise ValueError('Missing glyphs for '+kind+': '+''.join(sorted(missing)))
-            table=[]
-            for n,(ch,g) in enumerate(asset.get('glyphs',{}).items()):
-                gx,w=g.get('x'),g.get('w')
-                if len(ch)!=1 or type(gx)!=int or type(w)!=int or gx<0 or w<1 or gx+w>im.width or n>255:raise ValueError('Invalid glyph bounds')
-                mask=im.crop((gx,0,gx+w,im.height)).getchannel('A');glyph=Image.new('RGBA',(w,im.height),e['color']);glyph.putalpha(mask);rid=f'Glyph{i}_{n}';glyph.save(res/(rid+'.png'));resources.append(f'<bitmap id="{rid}" filename="{rid}.png" packingFormat="png" automaticPalette="false" dithering="none"/>');table.append(json.dumps(ch,ensure_ascii=False)+'=>[Rez.Drawables.'+rid+','+str(w)+']')
-            pixel_tables.append(f'pixels[{i}] = '+'{'+','.join(table)+'};')
-
         if kind in {'text','icon','image'}:
             static_image(e).save(res/f'Image{i}.png');resources.append(f'<bitmap id="Image{i}" filename="Image{i}.png" packingFormat="png" automaticPalette="false"/>');initial.append(f'images[{i}] = WatchUi.loadResource(Rez.Drawables.Image{i});');render.append(f'dc.drawBitmap({x},{y},images[{i}]);');continue
         key=(e['font'],round(e['size']))
-        if asset is None and key not in fontids:
+        if key not in fontids:
             name='Font'+str(len(fontids));fontids[key]=name;font_resource(res,name,*key,chars);resources.append(f'<font id="{name}" filename="{name}.fnt" antialias="true"/>');initial.append(f'fonts[{json.dumps(name)}] = WatchUi.loadResource(Rez.Fonts.{name});')
-        name=fontids.get(key);expr={'time':'hh + ":" + mm','hours':'hh','minutes':'":"+mm','seconds':'":" + clock.sec.format("%02d")','date':'["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."][date.day_of_week-1] + " " + date.day.format("%02d") + "." + date.month.format("%02d") + "."','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
-        if asset is not None:render.append(f'drawPixels(dc,pixels[{i}],{expr},{x},{y});')
-        else:render.append(f'dc.setColor(0x{e["color"][1:]},Graphics.COLOR_TRANSPARENT); dc.drawText({x},{y},fonts[{json.dumps(name)}],{expr},Graphics.TEXT_JUSTIFY_LEFT);')
+        name=fontids[key];expr={'time':'hh + ":" + mm','hours':'hh','minutes':'":"+mm','seconds':'":" + clock.sec.format("%02d")','date':'date.day.format("%02d") + "." + date.month.format("%02d") + "." + date.year.toString()','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
+        render.append(f'dc.setColor(0x{e["color"][1:]},Graphics.COLOR_TRANSPARENT); dc.drawText({x},{y},fonts[{json.dumps(name)}],{expr},Graphics.TEXT_JUSTIFY_LEFT);')
     fontxml=[s for s in resources if s.startswith('<font')];bitmaps=[s for s in resources if s.startswith('<bitmap')]
     Image.new('RGB',(65,65),'black').save(res/'launcher.png');bitmaps.append('<bitmap id="LauncherIcon" filename="launcher.png"/>')
-    (res/'resources.xml').write_text('<resources><fonts>'+''.join(fontxml)+'</fonts><bitmaps>'+''.join(bitmaps)+'</bitmaps><strings><string id="AppName">'+escape(app_name)+'</string></strings></resources>')
+    (res/'resources.xml').write_text('<resources><fonts>'+''.join(fontxml)+'</fonts><bitmaps>'+''.join(bitmaps)+'</bitmaps><strings><string id="AppName">Jorge Custom</string></strings></resources>')
     manifest='''<?xml version="1.0"?><iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3"><iq:application id="c5fa872a0f294834a22d4d4ad44c0641" type="watchface" name="@Strings.AppName" entry="CustomApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.0"><iq:products><iq:product id="venux1"/></iq:products><iq:permissions/><iq:languages><iq:language>deu</iq:language><iq:language>eng</iq:language></iq:languages><iq:barrels/></iq:application></iq:manifest>'''
-    manifest=manifest.replace('c5fa872a0f294834a22d4d4ad44c0641',app_id)
     (out/'manifest.xml').write_text(manifest);(out/'monkey.jungle').write_text('project.manifest = manifest.xml\nbase.sourcePath = source\nbase.resourcePath = resources\n')
     code='''import Toybox.Application;
 import Toybox.WatchUi;
@@ -145,13 +108,8 @@ class CustomApp extends Application.AppBase {
  function getInitialView() { return [new CustomFace()]; }
 }
 class CustomFace extends WatchUi.WatchFace {
- var fonts = {}; var images = {}; var pixels = {}; var sleeping = false;
+ var fonts = {}; var images = {}; var sleeping = false;
  function initialize() { WatchFace.initialize(); INITIAL }
- function drawPixels(dc,table,value,x,y) {
-  for(var k=0;k<value.length();k+=1) {
-   var ch=value.substring(k,k+1);if(table.hasKey(ch)) { var g=table[ch];dc.drawBitmap(x,y,WatchUi.loadResource(g[0]));x+=g[1]; }
-  }
- }
  function onEnterSleep() { sleeping=true; }
  function onExitSleep() { sleeping=false; WatchUi.requestUpdate(); }
  function onUpdate(dc) {
@@ -166,7 +124,7 @@ class CustomFace extends WatchUi.WatchFace {
  RENDER
  }
 }
-'''.replace('INITIAL','\n'.join(initial+pixel_tables)).replace('BGCOLOR','0x'+d['background'][1:]).replace('RENDER','\n'.join(render))
+'''.replace('INITIAL','\n'.join(initial)).replace('BGCOLOR','0x'+d['background'][1:]).replace('RENDER','\n'.join(render))
     (src/'Custom.mc').write_text(code);(out/'design.json').write_text(json.dumps(d,ensure_ascii=False,indent=2));return out
 
 def main():

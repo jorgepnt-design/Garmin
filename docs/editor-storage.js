@@ -1,13 +1,1 @@
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.JorgeDesignStore=api;})(typeof window!=='undefined'?window:globalThis,function(){
- 'use strict';const KEY='jorge-editor-v1';
- function create({local=localStorage,idb=typeof indexedDB==='undefined'?null:indexedDB}={}){
-  let dbPromise;const clean=d=>{const copy=JSON.parse(JSON.stringify(d));delete copy.renderAssets;delete copy.renderVersion;return copy;};
-  function db(){if(!idb)return Promise.resolve(null);if(!dbPromise)dbPromise=new Promise(resolve=>{const r=idb.open('jorge-watch-designs',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('designs'))r.result.createObjectStore('designs',{keyPath:'id'});};r.onsuccess=()=>resolve(r.result);r.onerror=r.onblocked=()=>resolve(null);});return dbPromise;}
-  async function request(mode,action){const d=await db();if(!d)return null;return new Promise((resolve,reject)=>{const tx=d.transaction('designs',mode),r=action(tx.objectStore('designs'));let value;r.onsuccess=()=>value=r.result;tx.oncomplete=()=>resolve(value);tx.onerror=tx.onabort=()=>reject(tx.error||Error('Design konnte nicht gespeichert werden.'));});}
-  function legacy(){const map=new Map();for(let i=0;i<local.length;i++){const key=local.key(i);if(key!==KEY&&(!key?.startsWith(KEY+':')||key.includes(':preview:')||key.endsWith(':library')))continue;try{const d=JSON.parse(local.getItem(key));if(d?.version!==1||!Array.isArray(d.elements))continue;const id=d.editorId||(key===KEY?d.name?.toLowerCase().replace(/[^a-z0-9]+/g,'-'):key.slice(KEY.length+1))||'sport';map.set(id,{id,name:d.name||'Mein Design',design:clean(d),updated:0});}catch{}}return [...map.values()];}
-  async function list(){const stored=await request('readonly',s=>s.getAll())||[];const map=new Map(legacy().map(r=>[r.id,r]));for(const r of stored)map.set(r.id,r);return [...map.values()].sort((a,b)=>b.updated-a.updated);}
-  async function get(id){const r=await request('readonly',s=>s.get(id));return r||legacy().find(r=>r.id===id)||null;}
-  async function put(id,design,preview){const d=clean(design);d.editorId=id;const r={id,name:d.name||'Mein Design',updated:Date.now(),design:d};const database=await db();if(database){const old=await request('readonly',s=>s.get(id));if(preview)r.preview=preview;else if(old?.preview)r.preview=old.preview;await request('readwrite',s=>s.put(r));try{local.setItem(KEY+':last-active',id);}catch{}return r;}local.setItem(KEY+':'+id,JSON.stringify(d));try{local.setItem(KEY,JSON.stringify(d));local.setItem(KEY+':last-active',id);}catch{}return r;}
-  return {get,list,put,clean};
- }return {create};
-});
+cat: Garmin/docs/editor-storage.js: No such file or directory
