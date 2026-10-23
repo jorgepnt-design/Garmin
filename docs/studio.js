@@ -26,10 +26,10 @@
  }}catch{}
  $('studio-load').textContent='448 × 486 Pixel · Standarddesign';
  $('studio-download').href='./builds/0.2.3/Jorge-'+theme+'.prg'; $('studio-download').textContent=theme.charAt(0).toUpperCase()+theme.slice(1)+' · PRG 0.2.3 herunterladen';
- const n=$('studio-live').checked?new Date():new Date('2026-10-22T'+($('studio-time').value||'20:35')+':42');
+ const n=$('studio-live').checked?new Date():new Date('2026-10-23T'+($('studio-time').value||'20:35')+':42');
  const pad=x=>String(x).padStart(2,'0'),h=pad(n.getHours()),m=pad(n.getMinutes()),s=pad(n.getSeconds());
  if($('studio-aod').checked){text('value',h+':'+m,224,210,'#777','center');return;}
- const top=pt?94:47;text('date','DO, 22. OKT',28,top+6,gold?a:'#fff');const battery=$('studio-battery').value+'%';text('battery',battery,420,top-5,a,'right');const bx=420-width('battery',battery)-44;ctx.strokeStyle=a;ctx.lineWidth=2;ctx.strokeRect(bx,top+3,32,20);ctx.fillStyle=a;ctx.fillRect(bx+33,top+9,3,8);ctx.fillRect(bx+3,top+6,Math.floor(26*Number($('studio-battery').value)/100),14);
+ const top=pt?94:47;text('date',['So.','Mo.','Di.','Mi.','Do.','Fr.','Sa.'][n.getDay()]+' '+pad(n.getDate())+'.'+pad(n.getMonth()+1)+'.',28,top+6,gold?a:'#fff');const battery=$('studio-battery').value+'%';text('battery',battery,420,top-5,a,'right');const bx=420-width('battery',battery)-44;ctx.strokeStyle=a;ctx.lineWidth=2;ctx.strokeRect(bx,top+3,32,20);ctx.fillStyle=a;ctx.fillRect(bx+33,top+9,3,8);ctx.fillRect(bx+3,top+6,Math.floor(26*Number($('studio-battery').value)/100),14);
  if(pt){line(19,103,19,406,a,4);line(429,103,429,406,'#ef3340',4);ctx.strokeStyle='#e8cd91';ctx.beginPath();ctx.arc(224,50,21,0,7);ctx.stroke();ctx.fillStyle='#ef3340';ctx.fillRect(212,36,24,25);ctx.beginPath();ctx.arc(224,59,12,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(217,40,14,19);ctx.beginPath();ctx.arc(224,57,7,0,7);ctx.fill();ctx.fillStyle='#039';[[222,42],[219,48],[226,48],[222,55]].forEach(p=>ctx.fillRect(...p,4,4));}
  if(gold){line(35,95,413,95,a);line(35,320,413,320,a);}
  const f=fontName(),small=f+'-seconds',main=h+':'+m,sec=':'+s,total=width(f,main)+8+width(small,sec),start=Math.floor((448-total)/2),y=pt?155:theme==='tesla'?104:120;
