@@ -159,7 +159,40 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick();});
 
 async function loadSavedDesigns(){
  if(!window.JorgeDesignStore||!el('saved-design-cards'))return;
- try{const rows=await JorgeDesignStore.create().list();window.JorgeSavedPreviews={};const cards=rows.map(row=>{let preview=row.preview;try{preview=preview||JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+row.id))?.image;}catch{}if(preview&&!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(preview))preview=null;if(preview)window.JorgeSavedPreviews[row.id]={name:row.name,image:preview};const card=document.createElement('article');card.className='design-card';if(preview){const img=document.createElement('img');img.src=preview;img.alt=row.name+' – gespeicherter Entwurf';img.style='width:100%;border-radius:20px;background:#000';card.append(img);}const title=document.createElement('h3');title.textContent=row.name;card.append(title);const link=document.createElement('a');link.className='button dark';link.textContent='Gespeichertes Design öffnen ↗';link.href='./editor.html?design='+encodeURIComponent(row.id);card.append(link);return card;});el('saved-design-cards').replaceChildren(...cards);el('saved-collection').hidden=!cards.length;renderCards();updateDetails();
+ try{
+  const store=JorgeDesignStore.create(),rows=await store.list();window.JorgeSavedPreviews={};
+  const cards=rows.map(row=>{
+   let preview=row.preview;try{preview=preview||JSON.parse(localStorage.getItem('jorge-editor-v1:preview:'+row.id))?.image;}catch{}
+   if(preview&&!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(preview))preview=null;
+   if(preview)window.JorgeSavedPreviews[row.id]={name:row.name,image:preview};
+   const card=document.createElement('article');card.className='design-card';card.dataset.savedId=row.id;
+   if(preview){const img=document.createElement('img');img.src=preview;img.alt=row.name+' – gespeicherter Entwurf';img.style='width:100%;border-radius:20px;background:#000';card.append(img);}
+   const title=document.createElement('h3');title.textContent=row.name;card.append(title);
+   const link=document.createElement('a');link.className='button dark';link.textContent='Bearbeiten ↗';link.setAttribute('aria-label',row.name+' bearbeiten');link.href='./editor.html?design='+encodeURIComponent(row.id);card.append(link);
+   const rename=document.createElement('button');rename.type='button';rename.className='button';rename.textContent='Umbenennen';rename.setAttribute('aria-label',row.name+' umbenennen');card.append(rename);
+   const form=document.createElement('form');form.hidden=true;form.className='saved-rename';
+   const label=document.createElement('label');label.textContent='Neuer Designname';
+   const input=document.createElement('input');input.value=row.name;input.maxLength=40;input.required=true;input.autocomplete='off';label.append(input);form.append(label);
+   const submit=document.createElement('button');submit.type='submit';submit.className='button dark';submit.textContent='Namen speichern';form.append(submit);
+   const cancel=document.createElement('button');cancel.type='button';cancel.className='button';cancel.textContent='Abbrechen';form.append(cancel);
+   const status=document.createElement('p');status.setAttribute('role','status');form.append(status);card.append(form);
+   rename.onclick=()=>{form.hidden=false;rename.hidden=true;input.focus();input.select();};
+   cancel.onclick=()=>{form.hidden=true;rename.hidden=false;input.value=title.textContent;status.textContent='';rename.focus();};
+   form.onsubmit=async e=>{
+    e.preventDefault();const name=input.value.trim();if(!name){status.textContent='Bitte einen Namen eingeben.';input.focus();return;}
+    submit.disabled=true;
+    try{
+     const current=await store.get(row.id);if(!current)throw Error('Design nicht gefunden. Bitte neu laden.');
+     current.design.name=name;await store.put(row.id,current.design,current.preview);
+     title.textContent=name;link.setAttribute('aria-label',name+' bearbeiten');rename.setAttribute('aria-label',name+' umbenennen');
+     const img=card.querySelector('img');if(img)img.alt=name+' – gespeicherter Entwurf';
+     if(window.JorgeSavedPreviews[row.id])window.JorgeSavedPreviews[row.id].name=name;
+     form.hidden=true;rename.hidden=false;rename.focus();
+    }catch(error){status.textContent='Umbenennen fehlgeschlagen: '+error.message;}finally{submit.disabled=false;}
+   };
+   return card;
+  });
+  el('saved-design-cards').replaceChildren(...cards);el('saved-collection').hidden=!cards.length;renderCards();updateDetails();
  }catch{el('saved-collection').hidden=true;}
 }
 loadSavedDesigns();
