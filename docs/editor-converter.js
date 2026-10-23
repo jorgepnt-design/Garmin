@@ -23,11 +23,11 @@
    if(run.conclusion!=='success')throw Error('Der GitHub-Bau ist '+(run.conclusion==='cancelled'?'abgebrochen':'fehlgeschlagen')+'. Details: '+REPO+'/actions/runs/'+run.id);
    const release=await gh('/releases/tags/build-'+sha);
    if(!release?.body?.includes(sha))throw Error('Der veröffentlichte Download gehört zu einem anderen Bau. Bitte erneut umwandeln.');
-   const stem=slug+'-P5-'+design.buildId+'-venux1';
+   const stem=slug+'-P6-'+design.buildId+'-venux1';
    const asset=release.assets?.find(a=>a.name===stem+'.prg'&&a.size>0),preview=release.assets?.find(a=>a.name===stem+'.png'&&a.size>0),receipt=release.assets?.find(a=>a.name===stem+'.json'&&a.size>0);
    if(!asset||!preview||!receipt)throw Error('Der Bau ist fertig, aber die passende PRG fehlt im Release.');
    const url=new URL(asset.browser_download_url);if(url.origin!=='https://github.com'||!url.pathname.startsWith('/jorgepnt-design/garmindesigner/releases/download/'))throw Error('Unerwartete Downloadadresse.');
-   return {url:url.href,name:asset.name,previewUrl:preview.browser_download_url,buildId:design.buildId,appName:(design.name||'Jorge Custom').slice(0,18)+' P5-'+design.buildId,sha,runUrl:REPO+'/actions/runs/'+run.id};
+   return {url:url.href,name:asset.name,previewUrl:preview.browser_download_url,buildId:design.buildId,appName:(design.name||'Jorge Custom').slice(0,18)+' P6-'+design.buildId,sha,runUrl:REPO+'/actions/runs/'+run.id};
   }
   throw Error('Der Bau läuft länger als erwartet. Fortschritt: '+REPO+'/actions');
  }
