@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build an editor JSON (including embedded PNGs) as a Venu X1 watchface."""
-import argparse,base64,hashlib,io,json,math,os,re,subprocess,shutil
+import argparse,base64,hashlib,io,json,math,os,re,subprocess,shutil,uuid
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
+from xml.sax.saxutils import escape
 ROOT=Path(__file__).resolve().parents[1]
 FONTS=ROOT/'docs/assets/editor-fonts'
 TYPES={'time','hours','minutes','seconds','date','battery','temperature','distance','alarmCount','alarmStatus','text','image','icon'}
@@ -77,23 +78,81 @@ def static_image(e):
         for p in [(.5,.3,.35,.6),(.35,.6,.6,.72),(.6,.72,.5,.98),(.35,.6,.08,.93),(.18,.4,.5,.3),(.5,.3,.75,.5),(.75,.5,.95,.35)]:line(*p)
     return im
 
+def rendered_image(asset):
+    data=asset.get('data','')
+    if not isinstance(data,str) or not re.fullmatch('data:image/png;base64,[A-Za-z0-9+/=]+',data) or len(data)>3000000:raise ValueError('Invalid rendered asset')
+    im=Image.open(io.BytesIO(base64.b64decode(data.split(',')[1],validate=True)))
+    if im.width>16000 or im.height>486 or im.width*im.height>4000000:raise ValueError('Rendered asset dimensions too large')
+    return im.convert('RGBA')
+
+RENDERER_VERSION = "P3"
+def identity(d):
+    build_id = str(d.get("buildId") or hashlib.sha256(json.dumps(d,sort_keys=True).encode()).hexdigest()[:8]).upper()
+    if not re.fullmatch("[A-F0-9]{8}",build_id):raise ValueError("Invalid build identifier")
+    name = str(d.get("name") or "Jorge Custom")[:18]+" "+RENDERER_VERSION+"-"+build_id
+    app_id = uuid.uuid5(uuid.UUID("6f1d3c2e-5a4b-4c8d-9e7f-0a1b2c3d4e5f"),RENDERER_VERSION+":"+build_id+":"+hashlib.sha256(json.dumps(d,sort_keys=True).encode()).hexdigest()).hex
+    return build_id,name,app_id
+
+def touch_zones(d):
+    targets={'temperature':'weather','distance':'steps','battery':'battery','date':'date','alarmCount':'alarms','alarmStatus':'alarms'}
+    icon_targets={'sun':'weather','run':'steps','battery':'battery','alarm':'alarms','heart':'heart'}
+    label_targets={'WETTER':'weather','KM HEUTE':'steps','HEUTE':'steps','AKTIV':'alarms','AUS':'alarms','WECKER':'alarms'}
+    samples={'temperature':'-16°C','distance':'88.88','battery':'100%','date':'Mi. 23.10.','alarmCount':'12','alarmStatus':'AKTIV'}
+    zones=[]
+    for i,e in reversed(list(enumerate(d['elements']))):
+        if not e.get('visible',True):continue
+        kind=e['type'];target=targets.get(kind)
+        if kind=='icon':target=icon_targets.get(e.get('icon'))
+        if kind=='text':target=label_targets.get(e.get('text','').upper())
+        if not target:continue
+        a=d.get('renderAssets',{}).get(str(i),{});size=e['size']
+        if a.get('kind')=='font':w=sum(a['glyphs'].get(ch,{}).get('w',0) for ch in samples.get(kind,''));h=a['height']
+        elif a.get('kind')=='bitmap':w=a.get('width',size);h=a.get('height',size)
+        else:w=size*(1 if kind=='icon' else 5);h=size
+        x1=max(0,round(e['x'])-12);y1=max(0,round(e['y'])-12)
+        x2=min(448,round(e['x'])+max(24,w)+12);y2=min(486,round(e['y'])+max(24,h)+12)
+        zones.append((x1,y1,x2,y2,target))
+    return zones
+
 def generate(d,out):
-    validate(d);out.mkdir(parents=True,exist_ok=True);res=out/'resources';res.mkdir(exist_ok=True);src=out/'source';src.mkdir(exist_ok=True)
-    resources=[];initial=[];render=[];fontids={};chars='0123456789:.-% °CkmAKTIVUS'
+    validate(d);build_id,app_name,app_id=identity(d);out.mkdir(parents=True,exist_ok=True);res=out/'resources';res.mkdir(exist_ok=True);src=out/'source';src.mkdir(exist_ok=True)
+    resources=[];initial=[];render=[];fontids={};pixel_tables=[];chars='0123456789:.-% °CkmAKTIVUSSoMDiFra'
     for i,e in enumerate(d['elements']):
         if not e.get('visible',True):continue
         x,y=round(e['x']),round(e['y']);kind=e['type']
+        asset=d.get('renderAssets',{}).get(str(i))
+        if d.get('renderVersion')==1:
+            if asset is None:raise ValueError('Missing rendered asset; save this design again in the editor')
+            im=rendered_image(asset)
+            if kind=='image' and im.getchannel('A').getbbox() is None:raise ValueError('Das exportierte Bild ist leer. Bild im Editor neu laden und erneut umwandeln.')
+            if asset.get('kind')=='bitmap':
+                bx,by=asset.get('x'),asset.get('y')
+                if type(bx)!=int or type(by)!=int or not 0<=bx<448 or not 0<=by<486 or im.width>448 or im.height>486:raise ValueError('Invalid bitmap bounds')
+                im.save(res/f'Exact{i}.png');resources.append(f'<bitmap id="Exact{i}" filename="Exact{i}.png" packingFormat="png" automaticPalette="false" dithering="none"/>');initial.append(f'images[{i}] = WatchUi.loadResource(Rez.Drawables.Exact{i});');render.append(f'dc.drawBitmap({bx},{by},images[{i}]);');continue
+            if asset.get('kind')!='font' or im.height!=asset.get('height'):raise ValueError('Invalid font pixel asset')
+            required={'time':'0123456789:','hours':'0123456789','minutes':'0123456789:','seconds':'0123456789:','date':'0123456789. SoMDiFra','battery':'0123456789%','temperature':'0123456789-°C','distance':'0123456789.-','alarmCount':'0123456789','alarmStatus':'AKTIVUS'}.get(kind,'')
+            missing=set(required)-set(asset.get('glyphs',{}))
+            if missing:raise ValueError('Missing glyphs for '+kind+': '+''.join(sorted(missing)))
+            table=[]
+            for n,(ch,g) in enumerate(asset.get('glyphs',{}).items()):
+                gx,w=g.get('x'),g.get('w')
+                if len(ch)!=1 or type(gx)!=int or type(w)!=int or gx<0 or w<1 or gx+w>im.width or n>255:raise ValueError('Invalid glyph bounds')
+                mask=im.crop((gx,0,gx+w,im.height)).getchannel('A');glyph=Image.new('RGBA',(w,im.height),e['color']);glyph.putalpha(mask);rid=f'Glyph{i}_{n}';glyph.save(res/(rid+'.png'));resources.append(f'<bitmap id="{rid}" filename="{rid}.png" packingFormat="png" automaticPalette="false" dithering="none"/>');table.append(json.dumps(ch,ensure_ascii=False)+'=>[Rez.Drawables.'+rid+','+str(w)+']')
+            pixel_tables.append(f'pixels[{i}] = '+'{'+','.join(table)+'};')
+
         if kind in {'text','icon','image'}:
             static_image(e).save(res/f'Image{i}.png');resources.append(f'<bitmap id="Image{i}" filename="Image{i}.png" packingFormat="png" automaticPalette="false"/>');initial.append(f'images[{i}] = WatchUi.loadResource(Rez.Drawables.Image{i});');render.append(f'dc.drawBitmap({x},{y},images[{i}]);');continue
         key=(e['font'],round(e['size']))
-        if key not in fontids:
+        if asset is None and key not in fontids:
             name='Font'+str(len(fontids));fontids[key]=name;font_resource(res,name,*key,chars);resources.append(f'<font id="{name}" filename="{name}.fnt" antialias="true"/>');initial.append(f'fonts[{json.dumps(name)}] = WatchUi.loadResource(Rez.Fonts.{name});')
-        name=fontids[key];expr={'time':'hh + ":" + mm','hours':'hh','minutes':'":"+mm','seconds':'":" + clock.sec.format("%02d")','date':'date.day.format("%02d") + "." + date.month.format("%02d") + "." + date.year.toString()','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
-        render.append(f'dc.setColor(0x{e["color"][1:]},Graphics.COLOR_TRANSPARENT); dc.drawText({x},{y},fonts[{json.dumps(name)}],{expr},Graphics.TEXT_JUSTIFY_LEFT);')
+        name=fontids.get(key);expr={'time':'hh + ":" + mm','hours':'hh','minutes':'":"+mm','seconds':'":" + clock.sec.format("%02d")','date':'["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."][date.day_of_week-1] + " " + date.day.format("%02d") + "." + date.month.format("%02d") + "."','battery':'System.getSystemStats().battery.format("%.0f") + "%"','temperature':'temp','distance':'km','alarmCount':'alarms.toString()','alarmStatus':'(alarms > 0 ? "AKTIV" : "AUS")'}[kind]
+        if asset is not None:render.append(f'drawPixels(dc,pixels[{i}],{expr},{x},{y});')
+        else:render.append(f'dc.setColor(0x{e["color"][1:]},Graphics.COLOR_TRANSPARENT); dc.drawText({x},{y},fonts[{json.dumps(name)}],{expr},Graphics.TEXT_JUSTIFY_LEFT);')
     fontxml=[s for s in resources if s.startswith('<font')];bitmaps=[s for s in resources if s.startswith('<bitmap')]
     Image.new('RGB',(65,65),'black').save(res/'launcher.png');bitmaps.append('<bitmap id="LauncherIcon" filename="launcher.png"/>')
-    (res/'resources.xml').write_text('<resources><fonts>'+''.join(fontxml)+'</fonts><bitmaps>'+''.join(bitmaps)+'</bitmaps><strings><string id="AppName">Jorge Custom</string></strings></resources>')
-    manifest='''<?xml version="1.0"?><iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3"><iq:application id="c5fa872a0f294834a22d4d4ad44c0641" type="watchface" name="@Strings.AppName" entry="CustomApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.0"><iq:products><iq:product id="venux1"/></iq:products><iq:permissions/><iq:languages><iq:language>deu</iq:language><iq:language>eng</iq:language></iq:languages><iq:barrels/></iq:application></iq:manifest>'''
+    (res/'resources.xml').write_text('<resources><fonts>'+''.join(fontxml)+'</fonts><bitmaps>'+''.join(bitmaps)+'</bitmaps><strings><string id="AppName">'+escape(app_name)+'</string></strings></resources>')
+    manifest='''<?xml version="1.0"?><iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3"><iq:application id="c5fa872a0f294834a22d4d4ad44c0641" type="watchface" name="@Strings.AppName" entry="CustomApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.0"><iq:products><iq:product id="venux1"/></iq:products><iq:permissions><iq:uses-permission id="ComplicationSubscriber"/></iq:permissions><iq:languages><iq:language>deu</iq:language><iq:language>eng</iq:language></iq:languages><iq:barrels/></iq:application></iq:manifest>'''
+    manifest=manifest.replace('c5fa872a0f294834a22d4d4ad44c0641',app_id)
     (out/'manifest.xml').write_text(manifest);(out/'monkey.jungle').write_text('project.manifest = manifest.xml\nbase.sourcePath = source\nbase.resourcePath = resources\n')
     code='''import Toybox.Application;
 import Toybox.WatchUi;
@@ -103,13 +162,21 @@ import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.ActivityMonitor;
 import Toybox.Weather;
+import Toybox.Complications;
 class CustomApp extends Application.AppBase {
  function initialize() { AppBase.initialize(); }
- function getInitialView() { return [new CustomFace()]; }
+ function getInitialView() { var face=new CustomFace();return [face,new CustomDelegate(face)]; }
 }
 class CustomFace extends WatchUi.WatchFace {
- var fonts = {}; var images = {}; var sleeping = false;
+ var fonts = {}; var images = {}; var pixels = {}; var sleeping = false;
+ var noticeUntil=0;var noticeText="";
  function initialize() { WatchFace.initialize(); INITIAL }
+ function drawPixels(dc,table,value,x,y) {
+  for(var k=0;k<value.length();k+=1) {
+   var ch=value.substring(k,k+1);if(table.hasKey(ch)) { var g=table[ch];dc.drawBitmap(x,y,WatchUi.loadResource(g[0]));x+=g[1]; }
+  }
+ }
+ function showNotice(value) { noticeText=value;noticeUntil=System.getTimer()+5000;WatchUi.requestUpdate(); }
  function onEnterSleep() { sleeping=true; }
  function onExitSleep() { sleeping=false; WatchUi.requestUpdate(); }
  function onUpdate(dc) {
@@ -122,9 +189,32 @@ class CustomFace extends WatchUi.WatchFace {
  var info=ActivityMonitor.getInfo();var km="--";
  if(info.distance!=null) { var n=info.distance/100000.0;km=n.format(n<100?"%.2f":n<1000?"%.1f":"%.0f"); }
  RENDER
+ if(System.getTimer()<noticeUntil) { dc.setColor(Graphics.COLOR_BLACK,Graphics.COLOR_BLACK);dc.fillRectangle(10,205,428,70);dc.setColor(Graphics.COLOR_WHITE,Graphics.COLOR_TRANSPARENT);dc.drawText(224,220,Graphics.FONT_XTINY,noticeText,Graphics.TEXT_JUSTIFY_CENTER); }
  }
 }
-'''.replace('INITIAL','\n'.join(initial)).replace('BGCOLOR','0x'+d['background'][1:]).replace('RENDER','\n'.join(render))
+class CustomDelegate extends WatchUi.WatchFaceDelegate {
+ var face;
+ function initialize(view) { WatchFaceDelegate.initialize();face=view; }
+ function onPress(event) {
+  if(face.sleeping) { return false; }
+  var p=event.getCoordinates();var x=p[0];var y=p[1];
+  TOUCH_ZONES
+  return false;
+ }
+ function open(target) {
+  if(target=="alarms") { face.showNotice("Alarme im Garmin-Uhrenmenue einstellen");return true; }
+  var type=null;
+  if(target=="weather") { type=Complications.COMPLICATION_TYPE_CURRENT_WEATHER; }
+  else if(target=="steps") { type=Complications.COMPLICATION_TYPE_STEPS; }
+  else if(target=="battery") { type=Complications.COMPLICATION_TYPE_BATTERY; }
+  else if(target=="date") { type=Complications.COMPLICATION_TYPE_DATE; }
+  else if(target=="heart") { type=Complications.COMPLICATION_TYPE_HEART_RATE; }
+  if(type==null) { return false; }
+  try { Complications.exitTo(new Complications.Id(type));return true; }
+  catch(error) { face.showNotice("Diese Garmin-Ansicht ist nicht verfuegbar");return true; }
+ }
+}
+'''.replace('INITIAL','\n'.join(initial+pixel_tables)).replace('BGCOLOR','0x'+d['background'][1:]).replace('RENDER','\n'.join(render)).replace('TOUCH_ZONES','\n'.join(f'if(x>={x1} && x<{x2} && y>={y1} && y<{y2}) {{ return open("{target}"); }}' for x1,y1,x2,y2,target in touch_zones(d)))
     (src/'Custom.mc').write_text(code);(out/'design.json').write_text(json.dumps(d,ensure_ascii=False,indent=2));return out
 
 def main():
